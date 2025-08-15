@@ -18,19 +18,19 @@ public:
     matrix(size_t colsize,size_t rowsize);
     matrix(const matrix& other);
 
-    double& indexVal(size_t row,size_t col);
-    double indexVal(size_t row,size_t col) const;
-    double& directIndexData(size_t index);
-    double directIndexData(size_t index) const;
+    float& indexVal(size_t row,size_t col);
+    float indexVal(size_t row,size_t col) const;
+    float& directIndexData(size_t index);
+    float directIndexData(size_t index) const;
 
-    void operator=(const double *datainput);
+    void operator=(const float *datainput);
     void operator=(const matrix& datainput);   
 
     matrix Transpose() const;
 
     matrix operator+(const matrix& madd) const;
 
-    matrix operator*(const double mulpnum) const;
+    matrix operator*(const float mulpnum) const;
     matrix operator*(const matrix& mulpmtx) const;
 
     matrix HadamardWith(const matrix& mulpmtx) const; 

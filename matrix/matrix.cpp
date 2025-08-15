@@ -1,13 +1,13 @@
 #include "matrix.h"
 
 matrix::matrix(size_t colsize,size_t rowsize):rows(rowsize),cols(colsize){
-    data= (double*)malloc(sizeof(double)*rows*cols);
+    data= (float*)malloc(sizeof(float)*rows*cols);
     for(size_t i =0; i<rows*cols;i++){
 		data[i] = 0;
 	}
 }
 
-void matrix::operator=(const double *datainput){
+void matrix::operator=(const float *datainput){
     for(size_t i =0; i<rows*cols;i++){
 		data[i] = datainput[i];
 	}
@@ -17,7 +17,7 @@ void matrix::operator=(const double *datainput){
 void matrix::operator=(const matrix &datainput){
     if(rows*cols!=datainput.cols*datainput.rows){
     free(data);
-    data = (double*)malloc(sizeof(double)*rows*cols);
+    data = (float*)malloc(sizeof(float)*rows*cols);
     }
 
     rows = datainput.rows;
@@ -30,25 +30,25 @@ void matrix::operator=(const matrix &datainput){
 }
 
 matrix::matrix(const matrix& other) : rows(other.rows), cols(other.cols) {
-    data = (double*)malloc(sizeof(double) * rows * cols);
+    data = (float*)malloc(sizeof(float) * rows * cols);
     for (size_t i = 0; i < rows * cols; i++) {
         data[i] = other.data[i];
     }
 }
 
-double &matrix::indexVal(size_t row,size_t col){
+float &matrix::indexVal(size_t row,size_t col){
     return data[row*cols+col];
 }
 
-double matrix::indexVal(size_t row,size_t col) const{
+float matrix::indexVal(size_t row,size_t col) const{
     return data[row*cols+col];
 }
 
-double &matrix::directIndexData(size_t index){
+float &matrix::directIndexData(size_t index){
     return data[index];
 }
 
-double matrix::directIndexData(size_t index) const{
+float matrix::directIndexData(size_t index) const{
     return data[index];
 }
 
@@ -75,7 +75,7 @@ matrix matrix::operator+(const matrix& madd) const{
 
 
 
-matrix matrix::operator*(const double mulpnum) const{
+matrix matrix::operator*(const float mulpnum) const{
     matrix ret(cols,rows);
 
     for(size_t i =0;i < rows * cols;i++)
@@ -91,7 +91,7 @@ matrix matrix::operator*(const matrix &mulpmtx) const{
 
     for(size_t i = 0;i<ret.rows;i++){
         for(size_t j = 0;j<ret.cols;j++){
-            double temp = 0;
+            float temp = 0;
             for(size_t k = 0;k<cols;k++){
                 temp += this->indexVal(i,k) * mulpmtx.indexVal(k,j);
             }
