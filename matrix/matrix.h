@@ -11,7 +11,7 @@
 
 class matrix{
 private:
-    double* data;
+    float* data;
     size_t rows,cols;//行,列
 public:
     //初始化:列,行

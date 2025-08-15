@@ -66,12 +66,9 @@ matrix matrix::Transpose() const{
 
 matrix matrix::operator+(const matrix& madd) const{
 	matrix ret(cols,rows);
+
+    for(size_t i =0;i < rows * cols;i++) ret.data[i] = data[i] + madd.data[i];
     
-    multi_process(cols*rows,2048,[&]wrapper_custom_start_end_mtx{
-        wrapper_inner_loop(i){
-            ret.data[i] = data[i] + madd.data[i];
-        }
-    });
 
 	return ret;
 }
@@ -81,11 +78,9 @@ matrix matrix::operator+(const matrix& madd) const{
 matrix matrix::operator*(const double mulpnum) const{
     matrix ret(cols,rows);
 
-     multi_process(cols*rows,2048,[&]wrapper_custom_start_end_mtx{
-        wrapper_inner_loop(i){
-            ret.data[i] = data[i] * mulpnum;
-        }
-    });
+    for(size_t i =0;i < rows * cols;i++)
+        ret.data[i] = data[i] * mulpnum;
+
 	return ret;
 }
 
@@ -110,11 +105,9 @@ matrix matrix::operator*(const matrix &mulpmtx) const{
 matrix matrix::HadamardWith(const matrix &mulpmtx) const{
     matrix ret(cols,rows);
 
-    multi_process(cols*rows,2048,[&]wrapper_custom_start_end_mtx{
-        wrapper_inner_loop(i){
-            ret.data[i] = data[i] * mulpmtx.data[i];
-        }
-    });
+    for(size_t i =0;i < rows * cols;i++)
+        ret.data[i] = data[i] * mulpmtx.data[i];
+
 	return ret;
 }
 
