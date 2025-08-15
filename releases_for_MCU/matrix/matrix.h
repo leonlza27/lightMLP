@@ -2,7 +2,6 @@
 #define _matrix_
 
 #include <malloc.h>
-#include "../wrapper/wrapper.h"
 #include <cstddef>
 
 #ifdef __ON_DBG
