@@ -1,5 +1,5 @@
+//初始验证
 #include <stdio.h>
-
 #include "matrix/matrix_static.h"
 
 
@@ -7,10 +7,11 @@ int main(){
 
     matrix_Q16_16_data *mat1 = alloc_matrix_Q16_16(),*mat2 = alloc_matrix_Q16_16();
 
-    f_q16_16 data[2]= {float_to_q16_16(1.0f),float_to_q16_16(2.0f)};
+    f_q16_16 data[2]= {float_to_q16_16(1.0f),float_to_q16_16(2.0f)},
+        data1[3] = {float_to_q16_16(3.0f),float_to_q16_16(4.0f),float_to_q16_16(5.0f)};
 
-    matrix_Q16_16_init(mat1,1,2,data);
-    matrix_Q16_16_init(mat2,2,1,data);
+    matrix_Q16_16_init(mat1,2,1,data);
+    matrix_Q16_16_init(mat2,1,3,data1);
 
     DbgPrint_Q16_16_matrix(mat1,"mat1");
     putc('\n',stdout);

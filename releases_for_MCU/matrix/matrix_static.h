@@ -9,7 +9,7 @@
 typedef struct matrix_Q16_16_data{
     uint16_t rows/*行数*/,cols/*列数*/;
     f_q16_16 *data;
-}matrix_Q16_16_data;
+}matrix_Q16_16_data,*p_matrix_Q16_16;
 
 #define alloc_matrix_Q16_16() (matrix_Q16_16_data*)malloc(sizeof(matrix_Q16_16_data))
 
@@ -17,8 +17,10 @@ typedef struct matrix_Q16_16_data{
 extern "C" {
 #endif
 
-//初始化:m(列数) * n(行数)
+//初始化:m(行数) * n(列数)
 void matrix_Q16_16_init(matrix_Q16_16_data *matrix,uint16_t m,uint16_t n,f_q16_16 *data);
+
+void matrix_Q16_16_reset(matrix_Q16_16_data *matrix,uint16_t m,uint16_t n,f_q16_16 *data);
 
 void matrix_Q16_16_add(const matrix_Q16_16_data *madd1, const matrix_Q16_16_data *madd2, matrix_Q16_16_data *resu);
 
