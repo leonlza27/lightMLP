@@ -1,28 +1,11 @@
 #include "mlp.h"
 
+void mlp_calclyr::confLyr(NetLyrAllocator lyrConf){
+    weights = alloc_matrix_Q16_16();
+    bias = alloc_matrix_Q16_16();
+    tmp = alloc_matrix_Q16_16();
 
-mlpNet::mlpNet(unsigned int arrLen,const NetLyrAllocator *netStruct){
-    fullConnData = (matrix*)malloc(sizeof(matrix)*(arrLen+1));
-    SigleLyrNutronSets = (mlpCalcLyr*)malloc(sizeof(mlpCalcLyr)*arrLen);
-
-    for(unsigned int i = 0;i < arrLen;i++){
-        fullConnData[i] = matrix(netStruct[i].inputNum,1);
-        SigleLyrNutronSets[i].updateConf(netStruct[i]);
-    }
-
-    fullConnData[arrLen] = matrix(netStruct[arrLen-1].outputNum,1);
-}
-
-mlpCalcLyr::mlpCalcLyr(const NetLyrAllocator thisLyrConf){
-    updateConf(thisLyrConf);
-}
-
-void mlpCalcLyr::updateConf(const NetLyrAllocator thisLyrConf){
-    weights = new matrix(thisLyrConf.inputNum,thisLyrConf.outputNum);
-    bias = new matrix(1,thisLyrConf.outputNum);
-    OriSum = new matrix(1,thisLyrConf.outputNum);
-}
-
-matrix mlpCalcLyr::calcsum(const matrix &inputdata){
-    (*OriSum) = (*weights) * inputdata + (*bias);
+    matrix_Q16_16_init(weights,lyrConf.inputs,lyrConf.outputs,lyrConf.existedWeightData);
+    matrix_Q16_16_init(bias,1,lyrConf.outputs,lyrConf.existedBiasData);
+    matrix_Q16_16_init(tmp,1,lyrConf.outputs,0);
 }

@@ -1,46 +1,36 @@
-#ifndef _mlp_
-#define _mlp_
+//mlp:仅用作mcu上推理
+#ifndef _mlp_static_
+#define _mlp_static_
 
-#include "../matrix/matrix.h"
+#include "../matrix/matrix_static.h"
+#include <stdint.h>
 
-typedef struct{
-    unsigned int inputNum;
-    unsigned int outputNum;
-    int ActiveType;
+typedef struct _netLyrAllocator{
+    uint16_t inputs;                //层输入
+    uint16_t outputs;               //层输出
+    unsigned char Activetype;       //层激活类型
+    f_q16_16 *existedWeightData;    //已有权重数据
+    f_q16_16 *existedBiasData;      //已有偏置数据
 }NetLyrAllocator;
 
-class mlpCalcLyr {
+class mlp_calclyr{
 private:
-    int ActiveType;
+    p_matrix_Q16_16 weights,bias;
+    unsigned char ActiveType;   //激活类型
+    p_matrix_Q16_16 tmp;        //激活前数据存储(防止运算动态分配)
+
 public:
-    matrix* weights,*bias;
-	matrix* OriSum;
+    void confLyr(NetLyrAllocator lyrConf);
+    void fwdCalc(const p_matrix_Q16_16 input,p_matrix_Q16_16 output);
+};
 
-    mlpCalcLyr(const NetLyrAllocator thisLyrConf);
-    void updateConf(const NetLyrAllocator thisLyrConf);
-
-    ~mlpCalcLyr() = default;
-
-    matrix calcsum(const matrix& inputdata);
-};  
-
-class mlpNet{
+class mlpNet_onMCU{
 private:
-    matrix *fullConnData;
-    mlpCalcLyr *SigleLyrNutronSets;    
-	
+    p_matrix_Q16_16 *fullConnData;      //全连接层([0]:网络输入 [<last>]:网络输出)
+    mlp_calclyr *NetLyrs;
 public:
-	mlpNet(unsigned int arrLen,const NetLyrAllocator *netStruct);
-    ~mlpNet();
-
-    void setInput(const matrix &inputdata);
-
-    void forward();
-    #ifdef __ON_TRAINING
-    void backward(const matrix &excepedResult);
-    #endif
-
-    matrix getOutput();
+    mlpNet_onMCU(uint16_t lyrnum,NetLyrAllocator *netstruct);
+    void infer();
 };
 
 #endif
