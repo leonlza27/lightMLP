@@ -2,32 +2,32 @@
 #ifndef _matrix_static_
 #define _matrix_static_
 
-#include "../f_q16_16_operation/f_q16_16_op.h"
+#include "../qfloat_operation/qfloat_op.h"
 #include <stdio.h>
 #include <malloc.h>
 
-typedef struct matrix_Q16_16_data{
+typedef struct matrix_qfloat_data{
     uint16_t rows/*行数*/,cols/*列数*/;
-    f_q16_16 *data;
-}matrix_Q16_16_data,*p_matrix_Q16_16;
+    qfloat *data;
+}matrix_qfloat_data,*p_matrix_qfloat;
 
-#define alloc_matrix_Q16_16() (matrix_Q16_16_data*)malloc(sizeof(matrix_Q16_16_data))
+#define alloc_matrix_qfloat() (matrix_qfloat_data*)malloc(sizeof(matrix_qfloat_data))
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 //初始化:m(行数) * n(列数)
-void matrix_Q16_16_init(matrix_Q16_16_data *matrix,uint16_t m,uint16_t n,f_q16_16 *data);
+void matrix_qfloat_init(matrix_qfloat_data *matrix,uint16_t m,uint16_t n,f_q16_16 *data);
 
-void matrix_Q16_16_reset(matrix_Q16_16_data *matrix,uint16_t m,uint16_t n,f_q16_16 *data);
+void matrix_qfloat_reset(matrix_qfloat_data *matrix,uint16_t m,uint16_t n,f_q16_16 *data);
 
-void matrix_Q16_16_add(const matrix_Q16_16_data *madd1, const matrix_Q16_16_data *madd2, matrix_Q16_16_data *resu);
+void matrix_qfloat_add(const matrix_qfloat_data *madd1, const matrix_qfloat_data *madd2, matrix_qfloat_data *resu);
 
-void matrix_Q16_16_mulpty(const matrix_Q16_16_data *mmul1, const matrix_Q16_16_data *mmul2, matrix_Q16_16_data *resu);
+void matrix_qfloat_mulpty(const matrix_qfloat_data *mmul1, const matrix_qfloat_data *mmul2, matrix_qfloat_data *resu);
 
 
-void DbgPrint_Q16_16_matrix(const matrix_Q16_16_data *matrix,char* mask);
+void DbgPrint_qfloat_matrix(const matrix_qfloat_data *matrix,char* mask);
 
 #ifdef __cplusplus
 }
