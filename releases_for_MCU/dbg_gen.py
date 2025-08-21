@@ -90,42 +90,42 @@ def gen_mul_test(m:int,k:int,n:int) -> example:
     return ret
 
 if __name__ == "__main__":
-    m = 10
+    m = 2
     n = 10
-    k = 12    
+    k = 3    
     with open("moudledebug_matrix.cpp","w") as fwr:
         fwr.write("#include <stdio.h>\n#include \"matrix/matrix_static.h\"\nint main(){\n")
-        fwr.write("\tmatrix_Q16_16_data *mat1 = alloc_matrix_Q16_16(),*mat2 = alloc_matrix_Q16_16(),*excepted = alloc_matrix_Q16_16(),*actual = alloc_matrix_Q16_16();\n")
-        fwr.write(f"\tmatrix_Q16_16_init(mat1,{m},{n},0);\n")
-        fwr.write(f"\tmatrix_Q16_16_init(mat2,{m},{n},0);\n")
-        fwr.write(f"\tmatrix_Q16_16_init(excepted,{m},{n},0);\n")
-        fwr.write(f"\tmatrix_Q16_16_init(actual,{m},{n},0);\n\n")
+        fwr.write("\tmatrix_qfloat_data *mat1 = alloc_matrix_qfloat(),*mat2 = alloc_matrix_qfloat(),*excepted = alloc_matrix_qfloat(),*actual = alloc_matrix_qfloat();\n")
+        fwr.write(f"\tmatrix_qfloat_init(mat1,{m},{n},0);\n")
+        fwr.write(f"\tmatrix_qfloat_init(mat2,{m},{n},0);\n")
+        fwr.write(f"\tmatrix_qfloat_init(excepted,{m},{n},0);\n")
+        fwr.write(f"\tmatrix_qfloat_init(actual,{m},{n},0);\n\n")
         
         #加法
         for i in range(5):
             opt = gen_add_test(m,n)
-            fwr.write(f"\tf_q16_16 madd1_{i}[] = {{ {",".join(str(nu) for nu in opt.mat1.dataRaw)} }};\n")
-            fwr.write(f"\tf_q16_16 madd2_{i}[] = {{ {",".join(str(nu) for nu in opt.mat2.dataRaw)} }};\n")
-            fwr.write(f"\tf_q16_16 mresu_{i}[] = {{ {",".join(str(nu) for nu in opt.mat_resu_excepeted.dataRaw)} }};\n\n")
-            fwr.write(f"\tmatrix_Q16_16_reset(mat1,{m},{n},madd1_{i});\n")
-            fwr.write(f"\tmatrix_Q16_16_reset(mat2,{m},{n},madd2_{i});\n")
-            fwr.write(f"\tmatrix_Q16_16_reset(excepted,{m},{n},mresu_{i});\n")
-            fwr.write(f"\tmatrix_Q16_16_add(mat1, mat2, actual);\n\n")
-            fwr.write(f"\tDbgPrint_Q16_16_matrix(excepted,\"excepted\");\n\tputc(\'\\n\',stdout);\n")
-            fwr.write(f"\tDbgPrint_Q16_16_matrix(actual,\"actual\");\n\tputs(\"\\n\");\n\n\n")
+            fwr.write(f"\tqfloat madd1_{i}[] = {{ {",".join(str(nu) for nu in opt.mat1.dataRaw)} }};\n")
+            fwr.write(f"\tqfloat madd2_{i}[] = {{ {",".join(str(nu) for nu in opt.mat2.dataRaw)} }};\n")
+            fwr.write(f"\tqfloat mresu_{i}[] = {{ {",".join(str(nu) for nu in opt.mat_resu_excepeted.dataRaw)} }};\n\n")
+            fwr.write(f"\tmatrix_qfloat_reset(mat1,{m},{n},madd1_{i});\n")
+            fwr.write(f"\tmatrix_qfloat_reset(mat2,{m},{n},madd2_{i});\n")
+            fwr.write(f"\tmatrix_qfloat_reset(excepted,{m},{n},mresu_{i});\n")
+            fwr.write(f"\tmatrix_qfloat_add(mat1, mat2, actual);\n\n")
+            fwr.write(f"\tDbgPrint_qfloat_matrix(excepted,\"excepted add {i}\");\n\tputc(\'\\n\',stdout);\n")
+            fwr.write(f"\tDbgPrint_qfloat_matrix(actual,\"actual add {i}\");\n\tputs(\"\\n\");\n\n\n")
         
         #乘法    
         for i in range(5):
             opt = gen_mul_test(m,k,n)
-            fwr.write(f"\tf_q16_16 madd1_{i}_2[] = {{ {",".join(str(nu) for nu in opt.mat1.dataRaw)} }};\n")
-            fwr.write(f"\tf_q16_16 madd2_{i}_2[] = {{ {",".join(str(nu) for nu in opt.mat2.dataRaw)} }};\n")
-            fwr.write(f"\tf_q16_16 mresu_{i}_2[] = {{ {",".join(str(nu) for nu in opt.mat_resu_excepeted.dataRaw)} }};\n\n")
-            fwr.write(f"\tmatrix_Q16_16_reset(mat1,{m},{n},madd1_{i}_2);\n")
-            fwr.write(f"\tmatrix_Q16_16_reset(mat2,{m},{n},madd2_{i}_2);\n")
-            fwr.write(f"\tmatrix_Q16_16_reset(excepted,{m},{n},mresu_{i}_2);\n")
-            fwr.write(f"\tmatrix_Q16_16_mul(mat1, mat2, actual);\n\n")
-            fwr.write(f"\tDbgPrint_Q16_16_matrix(excepted,\"excepted\");\n\tputc(\'\\n\',stdout);\n")
-            fwr.write(f"\tDbgPrint_Q16_16_matrix(actual,\"actual\");\n\tputs(\"\\n\");\n\n\n")
+            fwr.write(f"\tqfloat madd1_{i}_2[] = {{ {",".join(str(nu) for nu in opt.mat1.dataRaw)} }};\n")
+            fwr.write(f"\tqfloat madd2_{i}_2[] = {{ {",".join(str(nu) for nu in opt.mat2.dataRaw)} }};\n")
+            fwr.write(f"\tqfloat mresu_{i}_2[] = {{ {",".join(str(nu) for nu in opt.mat_resu_excepeted.dataRaw)} }};\n\n")
+            fwr.write(f"\tmatrix_qfloat_reset(mat1,{m},{k},madd1_{i}_2);\n")
+            fwr.write(f"\tmatrix_qfloat_reset(mat2,{k},{n},madd2_{i}_2);\n")
+            fwr.write(f"\tmatrix_qfloat_reset(excepted,{m},{n},mresu_{i}_2);\n")
+            fwr.write(f"\tmatrix_qfloat_mulpty(mat1, mat2, actual);\n\n")
+            fwr.write(f"\tDbgPrint_qfloat_matrix(excepted,\"excepted mulpty {i}\");\n\tputc(\'\\n\',stdout);\n")
+            fwr.write(f"\tDbgPrint_qfloat_matrix(actual,\"actual mulpty {i}\");\n\tputs(\"\\n\");\n\n\n")
         
             
         
