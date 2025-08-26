@@ -93,8 +93,17 @@ if __name__ == "__main__":
     m = 2
     n = 10
     k = 3    
-    with open("moudledebug_matrix.cpp","w") as fwr:
-        fwr.write("#include <stdio.h>\n#include \"matrix/matrix_static.h\"\nint main(){\n")
+    with open("moduledebug.cpp","w") as fwr:
+        fwr.write("#include <stdio.h>\n#include \"matrix/matrix_static.h\"\n\n")
+        fwr.write("int matrix_compare(const matrix_qfloat_data* a, const matrix_qfloat_data* b) {\n")
+        fwr.write("\tif (a->rows != b->rows || a->cols != b->cols) return 1;\n")
+        fwr.write("\tfor (int i = 0; i < a->rows * a->cols; i++) {\n")
+        fwr.write("\t\tif (a->data[i] != b->data[i]) return 1;\n")
+        fwr.write("\t}\n")
+        fwr.write("\treturn 0;\n")
+        fwr.write("}\n\n")
+        fwr.write("int main(){\n")
+        fwr.write("\tint error_count = 0;\n")
         fwr.write("\tmatrix_qfloat_data *mat1 = alloc_matrix_qfloat(),*mat2 = alloc_matrix_qfloat(),*excepted = alloc_matrix_qfloat(),*actual = alloc_matrix_qfloat();\n")
         fwr.write(f"\tmatrix_qfloat_init(mat1,{m},{n},0);\n")
         fwr.write(f"\tmatrix_qfloat_init(mat2,{m},{n},0);\n")
@@ -111,6 +120,10 @@ if __name__ == "__main__":
             fwr.write(f"\tmatrix_qfloat_reset(mat2,{m},{n},madd2_{i});\n")
             fwr.write(f"\tmatrix_qfloat_reset(excepted,{m},{n},mresu_{i});\n")
             fwr.write(f"\tmatrix_qfloat_add(mat1, mat2, actual);\n\n")
+            fwr.write(f"\tif(matrix_compare(excepted, actual) != 0) {{\n")
+            fwr.write(f"\t\tprintf(\"Add test {i} failed!\\n\");\n")
+            fwr.write(f"\t\terror_count++;\n")
+            fwr.write(f"\t}}\n")
             fwr.write(f"\tDbgPrint_qfloat_matrix(excepted,\"excepted add {i}\");\n\tputc(\'\\n\',stdout);\n")
             fwr.write(f"\tDbgPrint_qfloat_matrix(actual,\"actual add {i}\");\n\tputs(\"\\n\");\n\n\n")
         
@@ -124,9 +137,12 @@ if __name__ == "__main__":
             fwr.write(f"\tmatrix_qfloat_reset(mat2,{k},{n},madd2_{i}_2);\n")
             fwr.write(f"\tmatrix_qfloat_reset(excepted,{m},{n},mresu_{i}_2);\n")
             fwr.write(f"\tmatrix_qfloat_mulpty(mat1, mat2, actual);\n\n")
+            fwr.write(f"\tif(matrix_compare(excepted, actual) != 0) {{\n")
+            fwr.write(f"\t\tprintf(\"Multiply test {i} failed!\\n\");\n")
+            fwr.write(f"\t\terror_count++;\n")
+            fwr.write(f"\t}}\n")
             fwr.write(f"\tDbgPrint_qfloat_matrix(excepted,\"excepted mulpty {i}\");\n\tputc(\'\\n\',stdout);\n")
             fwr.write(f"\tDbgPrint_qfloat_matrix(actual,\"actual mulpty {i}\");\n\tputs(\"\\n\");\n\n\n")
         
-            
-        
-        fwr.write("return 0;\n}")
+        fwr.write("\tprintf(\"Total errors: %d\\n\", error_count);\n")
+        fwr.write("\treturn error_count;\n}")

@@ -1,5 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
-project(arfnet)
+project(release_objs_for_MCU)
 
 if(GENTYPE STREQUAL "spectest")
     set(SOURCES f_q16_16_operation/f_q16_16_op.c moudledebug.cpp)

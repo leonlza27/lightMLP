@@ -1,7 +1,7 @@
 #ifndef _qfloat_operations_
 #define _qfloat_operations_
 
-#include "../../CustomConf.h"
+#include "../CustomConf.h"
 
 
 //类型转换
@@ -21,6 +21,8 @@ qfloat qfloat_sub(qfloat num1,qfloat num2);
 qfloat qfloat_mul(qfloat num1,qfloat num2);
 
 qfloat qfloat_div(qfloat num1,qfloat num2);
+
+qfloat exp_qfloat(qfloat x);
 
 #ifdef __cplusplus
 }
