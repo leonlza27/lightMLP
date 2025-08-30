@@ -1,12 +1,14 @@
-project(release_objs_for_MCU)
+project(release_objs_for_MCU LANGUAGES C CXX)
 
-if(GENTYPE STREQUAL "spectest")
-    set(SOURCES f_q16_16_operation/f_q16_16_op.c moudledebug.cpp)
-    add_compile_definitions(-D__ON_DBG)
-    add_compile_options(-g)
-else()
-    set(SOURCES matrix/matrix.cpp mlp/mlp.cpp matrix_test.cpp)
-    
-endif()
 
-add_executable(test ${SOURCES})
+find_package(jsoncpp REQUIRED)
+# Build moduledebug executable
+add_executable(moduledebug 
+    moduledebug.cpp
+    matrix/matrix_static.c
+    qfloat_operation/qfloat_op.c
+    mlp/activator.cpp)
+
+target_link_libraries(moduledebug PRIVATE jsoncpp)
+
+add_compile_options(-g)

@@ -14,7 +14,8 @@ enum ACT_TYPE{
     type_Sigmoid_hard,
     type_Tanh_hard,
     type_Sign,
-    type_Softmax
+    type_Softmax,
+    type_LeakyReLU
 };
 
 namespace mlp_mcu_act{
@@ -31,5 +32,7 @@ namespace mlp_mcu_act{
 
     void Softmax(const p_matrix_qfloat input,p_matrix_qfloat output);
 }
+
+void get_act_func(ACT_TYPE type, const p_matrix_qfloat input, p_matrix_qfloat output, qfloat alpha = 0);
 
 #endif

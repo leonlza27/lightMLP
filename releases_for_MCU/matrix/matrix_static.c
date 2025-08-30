@@ -1,14 +1,15 @@
 #include "matrix_static.h"
+#include <stdlib.h>
 
-// 定义最大矩阵尺寸，根据实际应用调整
-#define MAX_MATRIX_ROWS 32
-#define MAX_MATRIX_COLS 32
-static qfloat matrix_data_buffer[MAX_MATRIX_ROWS * MAX_MATRIX_COLS];
-
-void matrix_qfloat_init(matrix_qfloat_data *matrix, uint16_t m, uint16_t n, f_q16_16 *data) {
+void matrix_qfloat_init(matrix_qfloat_data *matrix, uint16_t m, uint16_t n, qfloat *data) {
     matrix->cols = n;
     matrix->rows = m;
-    matrix->data = matrix_data_buffer;
+    matrix->data = (qfloat*)malloc(m * n * sizeof(qfloat));
+    
+    if(matrix->data == NULL) {
+        // 处理内存分配失败
+        return;
+    }
     
     if(data == 0) {
         for(uint32_t i = 0; i < m*n; i++) {
@@ -21,10 +22,23 @@ void matrix_qfloat_init(matrix_qfloat_data *matrix, uint16_t m, uint16_t n, f_q1
     }
 }
 
-void matrix_qfloat_reset(matrix_qfloat_data *matrix, uint16_t m, uint16_t n, f_q16_16 *data) {
+void matrix_qfloat_reset(matrix_qfloat_data *matrix, uint16_t m, uint16_t n, qfloat *data) {
+    // 检查是否需要重新分配内存
+    if(matrix->data == NULL || (m * n) != (matrix->rows * matrix->cols)) {
+        // 释放原有内存
+        if(matrix->data != NULL) {
+            free(matrix->data);
+        }
+        // 分配新内存
+        matrix->data = (qfloat*)malloc(m * n * sizeof(qfloat));
+        if(matrix->data == NULL) {
+            // 处理内存分配失败
+            return;
+        }
+    }
+
     matrix->cols = n;
     matrix->rows = m;
-    matrix->data = matrix_data_buffer;
     
     if(data == 0) {
         for(uint32_t i = 0; i < m*n; i++) {
@@ -60,29 +74,47 @@ void matrix_qfloat_add(const matrix_qfloat_data *madd1, const matrix_qfloat_data
 void matrix_qfloat_mulpty(const matrix_qfloat_data *mmul1, const matrix_qfloat_data *mmul2, matrix_qfloat_data *resu) {
     resu->cols = mmul2->cols;
     resu->rows = mmul1->rows;
-    register uint16_t mmul1_cols = mmul1->cols;
-    register uint16_t mmul2_cols = mmul2->cols;
-    register uint16_t resu_cols = resu->cols;
+    const uint16_t mmul1_cols = mmul1->cols;
+    const uint16_t mmul2_cols = mmul2->cols;
     
-    for(uint16_t i = 0; i < resu->rows; i++) {
-        for(uint16_t j = 0; j < resu_cols; j++) {
+    // 优化小矩阵乘法
+    if(mmul1_cols <= 4 && mmul1->rows <= 4 && mmul2_cols <= 4) {
+        for(uint16_t j = 0; j < mmul2_cols; j++) {
+            for(uint16_t i = 0; i < mmul1->rows; i++) {
+                register qfloat temp = 0;
+                for(uint16_t k = 0; k < mmul1_cols; k++) {
+                    temp += qfloat_mul(mmul1->data[i*mmul1_cols + k], mmul2->data[k*mmul2_cols + j]);
+                }
+                resu->data[i*mmul2_cols + j] = temp;
+            }
+        }
+        return;
+    }
+    
+    // 通用矩阵乘法优化
+    for(uint16_t j = 0; j < mmul2_cols; j++) {
+        for(uint16_t i = 0; i < mmul1->rows; i++) {
             register qfloat temp = 0;
             register uint16_t k = 0;
             
-            // 部分循环展开
-            for(; k + 3 < mmul1_cols; k += 4) {
+            // 8次循环展开
+            for(; k + 7 < mmul1_cols; k += 8) {
                 temp += qfloat_mul(mmul1->data[i*mmul1_cols + k], mmul2->data[k*mmul2_cols + j]);
                 temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+1], mmul2->data[(k+1)*mmul2_cols + j]);
                 temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+2], mmul2->data[(k+2)*mmul2_cols + j]);
                 temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+3], mmul2->data[(k+3)*mmul2_cols + j]);
+                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+4], mmul2->data[(k+4)*mmul2_cols + j]);
+                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+5], mmul2->data[(k+5)*mmul2_cols + j]);
+                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+6], mmul2->data[(k+6)*mmul2_cols + j]);
+                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+7], mmul2->data[(k+7)*mmul2_cols + j]);
             }
             
-            // 处理剩余部分
+            // 剩余部分处理
             for(; k < mmul1_cols; k++) {
                 temp += qfloat_mul(mmul1->data[i*mmul1_cols + k], mmul2->data[k*mmul2_cols + j]);
             }
             
-            resu->data[i*resu_cols + j] = temp;
+            resu->data[i*mmul2_cols + j] = temp;
         }
     }
 }

@@ -29,6 +29,8 @@ typedef int16_t qf_cur_cast;
 #define QF_FLOAT_MASK 0xFF
 #define QF_MAX Q8_MAX
 #define QF_MIN Q8_MIN
+#define QF_LUT_LEN 128
+#define QF_EXP_LUT exp_lut_q8
 #else
 typedef f_q16_16 qfloat;
 #define QSHIFT 16
@@ -38,11 +40,13 @@ typedef int32_t qf_cur_cast;
 #define QF_FLOAT_MASK 0xFFFF
 #define QF_MAX Q16_MAX
 #define QF_MIN Q16_MIN
+#define QF_LUT_LEN 256
+#define QF_EXP_LUT exp_lut_q16
 #endif
 
 // exp函数LUT表(调整区间为[-8,8]，q8.8为128点，q16.16为256点)
 #ifdef CPU_PLATFORM_8BIT
-const f_q8_8 exp_lut_q8[128] = {
+static const f_q8_8 exp_lut_q8[128] = {
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,
 0,0,0,0,1,1,1,1,
@@ -61,7 +65,7 @@ const f_q8_8 exp_lut_q8[128] = {
 32767,32767,32767,32767,32767,32767,32767,32767
 };
 #else
-const f_q16_16 exp_lut_q16[256] = {
+static const f_q16_16 exp_lut_q16[256] = {
 21,23,24,26,28,30,32,34,
 36,38,41,43,46,49,52,56,
 59,63,68,72,77,82,87,93,

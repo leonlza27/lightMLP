@@ -20,28 +20,17 @@ qfloat exp_qfloat(qfloat x){
     if(x > 8 << QSHIFT) return QF_MAX;
     if(x < -8 << QSHIFT) return 0;
 
-    // 查表实现
-    #ifdef CPU_PLATFORM_8BIT
-    extern const f_q8_8 exp_lut_q8[128];
-    #else
-    extern const f_q16_16 exp_lut_q16[256];
-    #endif
+    //lut + 线性插值
 
-    // 计算表索引 (x范围-8到8映射到0-127或0-255)
-    qf_cur_cast index;
-    #ifdef CPU_PLATFORM_8BIT
-    index = ((x + (8 << QSHIFT)) * 128) / (16 << QSHIFT);
-    index = (index < 0) ? 0 : (index > 127) ? 127 : index;
-    #else
-    index = ((x + (8 << QSHIFT)) * 256) / (16 << QSHIFT);
-    index = (index < 0) ? 0 : (index > 255) ? 255 : index;
-    #endif
+    qf_cur_cast index_raw = ((x + float_to_qfloat(8))*(QF_LUT_LEN - 1)) /16;
 
-    #ifdef CPU_PLATFORM_8BIT
-    return exp_lut_q8[index];
-    #else
-    return exp_lut_q16[index];
-    #endif
+    int index = index_raw >> QSHIFT;
+    qf_cur_cast insert_y0 = QF_EXP_LUT[index];
+    qf_cur_cast insert_y1 = QF_EXP_LUT[index+1];
+    
+    qf_cur_cast frac = index_raw & QF_FLOAT_MASK;
+
+    return insert_y0 + qfloat_mul(insert_y1 - insert_y0, frac);
 
     // 保留原有计算作为后备方案
     /*

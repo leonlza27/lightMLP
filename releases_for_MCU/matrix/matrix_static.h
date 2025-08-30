@@ -18,9 +18,9 @@ extern "C" {
 #endif
 
 //初始化:m(行数) * n(列数)
-void matrix_qfloat_init(matrix_qfloat_data *matrix,uint16_t m,uint16_t n,f_q16_16 *data);
+void matrix_qfloat_init(matrix_qfloat_data *matrix,uint16_t m,uint16_t n,qfloat *data);
 
-void matrix_qfloat_reset(matrix_qfloat_data *matrix,uint16_t m,uint16_t n,f_q16_16 *data);
+void matrix_qfloat_reset(matrix_qfloat_data *matrix,uint16_t m,uint16_t n,qfloat *data);
 
 void matrix_qfloat_add(const matrix_qfloat_data *madd1, const matrix_qfloat_data *madd2, matrix_qfloat_data *resu);
 
