@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <malloc.h>
 
+#define BLOCK_SIZE 16
+
 typedef struct matrix_qfloat_data{
     uint16_t rows/*行数*/,cols/*列数*/;
     qfloat *data;

@@ -1,6 +1,10 @@
 #include "matrix_static.h"
 #include <stdlib.h>
 
+static inline uint16_t min(uint16_t num1, uint16_t num2){
+    return num1 < num2? num1: num2;
+}
+
 void matrix_qfloat_init(matrix_qfloat_data *matrix, uint16_t m, uint16_t n, qfloat *data) {
     matrix->cols = n;
     matrix->rows = m;
@@ -55,68 +59,58 @@ void matrix_qfloat_add(const matrix_qfloat_data *madd1, const matrix_qfloat_data
     resu->cols = madd1->cols;
     resu->rows = madd1->rows;
     register uint32_t size = madd1->cols * madd1->rows;
-    register uint32_t i = 0;
     
-    // 部分循环展开
-    for(; i + 3 < size; i += 4) {
-        resu->data[i] = madd1->data[i] + madd2->data[i];
-        resu->data[i+1] = madd1->data[i+1] + madd2->data[i+1];
-        resu->data[i+2] = madd1->data[i+2] + madd2->data[i+2];
-        resu->data[i+3] = madd1->data[i+3] + madd2->data[i+3];
-    }
+    qfloat *in1_base = madd1->data;
+    qfloat *in2_base = madd2->data;
+    qfloat *out_base = resu->data;
     
-    // 处理剩余部分
-    for(; i < size; i++) {
-        resu->data[i] = madd1->data[i] + madd2->data[i];
+    for(uint16_t i_blk = 0; i_blk < size; i_blk += BLOCK_SIZE){
+        uint16_t i_in_max = min(size - i_blk, BLOCK_SIZE);
+        qfloat *in1row = in1_base + i_blk;
+        qfloat *in2row = in2_base + i_blk;
+        qfloat *outrow = out_base + i_blk;
+        for(uint16_t i = 0; i < i_in_max; i++){
+            outrow[i] = in1row[i] + in2row[i];
+        }
     }
 }
 
 void matrix_qfloat_mulpty(const matrix_qfloat_data *mmul1, const matrix_qfloat_data *mmul2, matrix_qfloat_data *resu) {
     resu->cols = mmul2->cols;
     resu->rows = mmul1->rows;
-    const uint16_t mmul1_cols = mmul1->cols;
-    const uint16_t mmul2_cols = mmul2->cols;
+    const uint16_t _k = mmul1->cols,
+                    out_rows = mmul1->rows,
+                    out_cols = mmul2->cols;
     
-    // 优化小矩阵乘法
-    if(mmul1_cols <= 4 && mmul1->rows <= 4 && mmul2_cols <= 4) {
-        for(uint16_t j = 0; j < mmul2_cols; j++) {
-            for(uint16_t i = 0; i < mmul1->rows; i++) {
-                register qfloat temp = 0;
-                for(uint16_t k = 0; k < mmul1_cols; k++) {
-                    temp += qfloat_mul(mmul1->data[i*mmul1_cols + k], mmul2->data[k*mmul2_cols + j]);
+    //matrix_qf.data地址源
+    qfloat *in1_base = mmul1->data,
+           *in2_base = mmul2->data,
+           *out_base = resu->data;
+    
+    
+    for(uint16_t i_blk = 0; i_blk < out_rows; i_blk += BLOCK_SIZE){
+        for(uint16_t j_blk = 0; j_blk < out_cols; j_blk += BLOCK_SIZE){
+            for(uint16_t k_blk = 0; k_blk < _k; k_blk += BLOCK_SIZE){
+            
+            uint16_t i_in_max = min(out_rows - i_blk, BLOCK_SIZE);
+            uint16_t j_in_max = min(out_cols - j_blk, BLOCK_SIZE);
+            uint16_t k_in_max = min(_k - k_blk, BLOCK_SIZE);
+            
+                for(uint16_t i = 0; i < i_in_max; i++){
+               
+                    for(uint16_t j = 0; j < j_in_max; j++){
+                        
+                        _tmp_larger sum = 0;
+                        for(uint16_t k = 0; k < k_in_max; k++){
+                            sum += ((_tmp_larger)in1_base[(i_blk + i) * _k + (k_blk + k)] * in2_base[(k_blk + k) * out_rows + (j_blk + j)]);
+                        }
+                        out_base[(i_blk + i) * out_cols + (j_blk + j)] = (qfloat)(sum + (1LL << (QSHIFT -1))) >> QSHIFT;
+                    }
                 }
-                resu->data[i*mmul2_cols + j] = temp;
             }
         }
-        return;
     }
     
-    // 通用矩阵乘法优化
-    for(uint16_t j = 0; j < mmul2_cols; j++) {
-        for(uint16_t i = 0; i < mmul1->rows; i++) {
-            register qfloat temp = 0;
-            register uint16_t k = 0;
-            
-            // 8次循环展开
-            for(; k + 7 < mmul1_cols; k += 8) {
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k], mmul2->data[k*mmul2_cols + j]);
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+1], mmul2->data[(k+1)*mmul2_cols + j]);
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+2], mmul2->data[(k+2)*mmul2_cols + j]);
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+3], mmul2->data[(k+3)*mmul2_cols + j]);
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+4], mmul2->data[(k+4)*mmul2_cols + j]);
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+5], mmul2->data[(k+5)*mmul2_cols + j]);
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+6], mmul2->data[(k+6)*mmul2_cols + j]);
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k+7], mmul2->data[(k+7)*mmul2_cols + j]);
-            }
-            
-            // 剩余部分处理
-            for(; k < mmul1_cols; k++) {
-                temp += qfloat_mul(mmul1->data[i*mmul1_cols + k], mmul2->data[k*mmul2_cols + j]);
-            }
-            
-            resu->data[i*mmul2_cols + j] = temp;
-        }
-    }
 }
 
 void DbgPrint_qfloat_matrix(const matrix_qfloat_data *matrix, char *mask){
