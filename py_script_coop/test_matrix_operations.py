@@ -4,15 +4,34 @@
 使用已编译的 libmatrixtest.so 库和numpy进行结果验证
 """
 
-import ctypes
+import cffi
 import numpy as np
 import os
 import sys
 
+ffi = cffi.FFI()
+
+gcs = []
+
+ffi.cdef("""
+typedef struct matrix_bp_data{
+    int32_t *data;
+    uint16_t rows/*行数*/,cols/*列数*/;
+}matrix_bp_data;
+
+void quickcheck_mmul(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *rawresu, matrix_bp_data *actualresu);
+
+void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
+
+void *malloc(size_t size);
+void free(void* ptr);
+
+""")
+
 # 加载共享库
-lib_path = os.path.join(os.path.dirname(__file__), '..', "build",'releases_for_MCU', 'libpymatrixtest.so')
+lib_path = os.path.join(os.path.dirname(__file__), '..', "build",'src_edgedev', 'libpymatrixtest.so')
 try:
-    lib = ctypes.CDLL(lib_path)
+    lib = ffi.dlopen(lib_path)
 except Exception as e:
     print(f"无法加载库 {lib_path}: {e}")
     sys.exit(1)
@@ -20,79 +39,56 @@ except Exception as e:
 # 定义 qfloat 类型 - 根据 CustomConf.h 配置
 # 默认使用 32位 q16.16 定点数
 QSHIFT = 16
-qfloat = ctypes.c_int32
-
-# 定义 matrix_qfloat_data 结构 - 与C代码中的结构匹配
-class MatrixQFloatData(ctypes.Structure):
-    _fields_ = [
-        ("rows", ctypes.c_uint16),    # 行数
-        ("cols", ctypes.c_uint16),    # 列数
-        ("data", ctypes.POINTER(qfloat))  # 数据指针
-    ]
-
-# 定义函数原型 - 确保参数类型正确
-lib.matrix_qfloat_add.argtypes = [
-    ctypes.POINTER(MatrixQFloatData),  # madd1 - 指向矩阵结构的指针
-    ctypes.POINTER(MatrixQFloatData),  # madd2 - 指向矩阵结构的指针
-    ctypes.POINTER(MatrixQFloatData)   # resu - 指向结果矩阵结构的指针
-]
-lib.matrix_qfloat_add.restype = None
-
-lib.matrix_qfloat_mulpty.argtypes = [
-    ctypes.POINTER(MatrixQFloatData),  # mmul1 - 指向矩阵结构的指针
-    ctypes.POINTER(MatrixQFloatData),  # mmul2 - 指向矩阵结构的指针
-    ctypes.POINTER(MatrixQFloatData)   # resu - 指向结果矩阵结构的指针
-]
-lib.matrix_qfloat_mulpty.restype = None
-
-lib.matrix_qfloat_init.argtypes = [
-    ctypes.POINTER(MatrixQFloatData),  # matrix - 指向矩阵结构的指针
-    ctypes.c_uint16,                   # m - 行数
-    ctypes.c_uint16,                   # n - 列数
-    ctypes.POINTER(qfloat)             # data - 指向qfloat数据的指针
-]
-lib.matrix_qfloat_init.restype = None
 
 # 辅助函数：浮点数转qfloat（定点数）
-def float_to_qfloat(f):
+def float_to_qfix(f):
     """将浮点数转换为q16.16定点数"""
-    return int(round(f * (1 << QSHIFT)))
+    return int(f * (1 << QSHIFT))
 
 # 辅助函数：qfloat转浮点数
-def qfloat_to_float(q):
+def qfix_to_float(q):
     """将q16.16定点数转换为浮点数"""
     return q / (1 << QSHIFT)
 
-def ConstructNumpyToMatrixQF(rows :int, cols :int, rawNumpy):
+def ConstructNumpyToMatrixBP(rows :int, cols :int, rawNumpy):
     if rawNumpy is not None:
-        m_bp16 = np.vectorize(float_to_qfloat)(rawNumpy).flatten("C").tolist()
+        m_bp16 = np.vectorize(float_to_qfix)(rawNumpy).flatten("C")
 
-        cbuf = (qfloat * (rows * cols))(*m_bp16)
+        cbuf = m_bp16
     else:
-        cbuf = (qfloat * (rows * cols))(*[0 for i in range(rows*cols)])
+        cbuf = np.array([0 for _ in range(rows*cols)],dtype = np.int32)
 
-    structret = MatrixQFloatData()
-    structret.rows = ctypes.c_uint16(rows)
-    structret.cols = ctypes.c_uint16(cols)
-    structret.data = cbuf
-    structret._data = cbuf
+    structret = ffi.new("matrix_bp_data*")
+    structret.rows = rows
+    structret.cols = cols
+    cbuf_cast = ffi.cast("int32_t*",lib.malloc(ffi.sizeof("int32_t") * rows * cols))
+    if cbuf_cast == ffi.NULL:
+        raise MemoryError("malloc fail")
+    for i in range(rows * cols):
+        cbuf_cast[i] = cbuf[i]
+    
+    structret.data = cbuf_cast
+    
+    gcs.append(ffi.gc(cbuf_cast,lib.free))
     return structret
     
-def check(tg, excepted):
+def check(tg, raw, excepted):
+    print("diffs(data from c - numpy exception)")
     resucast = []
+    rawresucast = []
     exceptcast = excepted.flatten("C")
     for i in range(len(exceptcast)):     
-        resucast.append(qfloat_to_float(tg[i]))
+        resucast.append(qfix_to_float(tg[i]))
+        rawresucast.append(qfix_to_float(raw[i]))
    
     resu = np.array(resucast)
-    diff = np.abs(resu - exceptcast)
+    rawresu = np.array(rawresucast)
+    diff_sys = rawresu - exceptcast
+    diff = resu - exceptcast
     
-    print(f"aver:{np.std(diff)}\nmax:{np.max(diff)}\nmin:{np.min(diff)}")
-      
-    
-        
-        
-    
+    print(f"[sys_diff] aver:{np.std(diff_sys)}\nmax:{np.max(diff_sys)}\nmin:{np.min(diff_sys)}\nvar:{np.var(diff_sys)}")
+    print(f"[actual_diff] aver:{np.std(diff)}\nmax:{np.max(diff)}\nmin:{np.min(diff)}\nvar:{np.var(diff)}")
+
 
 def test_add():
     m,k,n=10,30,5
@@ -101,15 +97,18 @@ def test_add():
     testB = np.random.rand(k, n)
 
     exceptedC = np.dot(testA ,testB)
-
-
-    cmatA = ConstructNumpyToMatrixQF(m, k, testA)
-    cmatB = ConstructNumpyToMatrixQF(k, n, testB)
-    cmatC = ConstructNumpyToMatrixQF(m, n, None)
     
-    lib.matrix_qfloat_mulpty(cmatA, cmatB, cmatC)
+    cmatA = ConstructNumpyToMatrixBP(m,k,testA)
+    cmatB = ConstructNumpyToMatrixBP(k,n,testB)
+    cmatC = ConstructNumpyToMatrixBP(m,n,None)
+    cmatC_raw = ConstructNumpyToMatrixBP(m,n,None)
+    
+    print(cmatC.data,cmatC_raw.data)
+    
+    print("main test fun")
+    lib.quickcheck_mmul(cmatA, cmatB, cmatC_raw, cmatC)
 
-    check(cmatC.data,exceptedC)
+    check(cmatC.data, cmatC_raw.data, exceptedC)
     pass
 
 if __name__ == "__main__" :

@@ -21,7 +21,7 @@ typedef int32_t f_q16_16;
 #define Q16_MIN INT32_MIN
 
 #ifdef CPU_PLATFORM_8BIT
-typedef f_q8_8 qfloat;
+typedef f_q8_8 qfix;
 #define QSHIFT 8
 #define _tmp_larger int32_t
 typedef int16_t qf_cur_cast;
@@ -32,7 +32,7 @@ typedef int16_t qf_cur_cast;
 #define QF_LUT_LEN 128
 #define QF_EXP_LUT exp_lut_q8
 #else
-typedef f_q16_16 qfloat;
+typedef f_q16_16 qfix;
 #define QSHIFT 16
 #define _tmp_larger int64_t
 typedef int32_t qf_cur_cast;

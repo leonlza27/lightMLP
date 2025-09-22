@@ -1,55 +1,55 @@
 #include "activator.h"
 
-void mlp_mcu_act::ReLU(const p_matrix_qfloat input, p_matrix_qfloat output){
+void mlp_mcu_act::ReLU(const p_matrix_qfix input, p_matrix_qfix output){
     const uint32_t size = input->cols * input->rows;
-    const qfloat zero = float_to_qfloat(0.0f);
+    const qfix zero = float_to_qfix(0.0f);
     
     for(uint32_t i = 0; i < size; i++){
         output->data[i] = std::max(zero, input->data[i]);
     }
 }
 
-void mlp_mcu_act::ReLU6(const p_matrix_qfloat input, p_matrix_qfloat output){
+void mlp_mcu_act::ReLU6(const p_matrix_qfix input, p_matrix_qfix output){
     const uint32_t size = input->cols * input->rows;
-    const qfloat zero = float_to_qfloat(0.0f);
-    const qfloat six = float_to_qfloat(6.0f);
+    const qfix zero = float_to_qfix(0.0f);
+    const qfix six = float_to_qfix(6.0f);
     
     for(uint32_t i = 0; i < size; i++){
         output->data[i] = std::min(six, std::max(zero, input->data[i]));
     }
 }
 
-void mlp_mcu_act::LeakyReLU(const p_matrix_qfloat input,p_matrix_qfloat output, qfloat alpha){
+void mlp_mcu_act::LeakyReLU(const p_matrix_qfix input,p_matrix_qfix output, qfix alpha){
     const uint32_t size = input->cols * input->rows;
     
     for(uint32_t i = 0; i < size; i++){
-        output->data[i] = std::max(qfloat_mul(input->data[i],alpha), input->data[i]);
+        output->data[i] = std::max(qfix_mul(input->data[i],alpha), input->data[i]);
     }
 }
 
 // Pre-computed constants
-static const qfloat Q_ZERO = float_to_qfloat(0.0f);
-static const qfloat Q_ONE = float_to_qfloat(1.0f);
-static const qfloat Q_NEG_ONE = float_to_qfloat(-1.0f);
-static const qfloat Q_HALF = float_to_qfloat(0.5f);
-static const qfloat Q_POINT_TWO = float_to_qfloat(0.2f);
+static const qfix Q_ZERO = float_to_qfix(0.0f);
+static const qfix Q_ONE = float_to_qfix(1.0f);
+static const qfix Q_NEG_ONE = float_to_qfix(-1.0f);
+static const qfix Q_HALF = float_to_qfix(0.5f);
+static const qfix Q_POINT_TWO = float_to_qfix(0.2f);
 
-void mlp_mcu_act::Sigmoid_Hard(const p_matrix_qfloat input, p_matrix_qfloat output){
+void mlp_mcu_act::Sigmoid_Hard(const p_matrix_qfix input, p_matrix_qfix output){
     const uint32_t size = input->cols * input->rows;
-    const qfloat* in = input->data;
-    qfloat* out = output->data;
+    const qfix* in = input->data;
+    qfix* out = output->data;
     
     for(uint32_t i = 0; i < size; i++){
         // Direct computation without temporary variable
-        qfloat val = Q_HALF + (qfloat)((Q_POINT_TWO * (_tmp_larger)in[i]) >> QSHIFT); // Approximate multiply using shift
+        qfix val = Q_HALF + (qfix)((Q_POINT_TWO * (_tmp_larger)in[i]) >> QSHIFT); // Approximate multiply using shift
         out[i] = (val > Q_ONE) ? Q_ONE : (val < Q_ZERO ? Q_ZERO : val);
     }
 }
 
-void mlp_mcu_act::Tanh_Hard(const p_matrix_qfloat input, p_matrix_qfloat output){
+void mlp_mcu_act::Tanh_Hard(const p_matrix_qfix input, p_matrix_qfix output){
     const uint32_t size = input->cols * input->rows;
-    const qfloat* in = input->data;
-    qfloat* out = output->data;
+    const qfix* in = input->data;
+    qfix* out = output->data;
     
     for(uint32_t i = 0; i < size; i++){
         // Direct comparison without function calls
@@ -57,50 +57,50 @@ void mlp_mcu_act::Tanh_Hard(const p_matrix_qfloat input, p_matrix_qfloat output)
     }
 }
 
-void mlp_mcu_act::Sigmoid(const p_matrix_qfloat input, p_matrix_qfloat output){
+void mlp_mcu_act::Sigmoid(const p_matrix_qfix input, p_matrix_qfix output){
     const uint32_t size = input->cols * input->rows;
-    const qfloat one = float_to_qfloat(1.0f);
+    const qfix one = float_to_qfix(1.0f);
     
     for(uint32_t i = 0; i < size; i++){
-        output->data[i] = qfloat_div(one, one + exp_qfloat(-input->data[i]));
+        output->data[i] = qfix_div(one, one + exp_qfix(-input->data[i]));
     }
 }
 
-void mlp_mcu_act::Tanh(const p_matrix_qfloat input, p_matrix_qfloat output){
+void mlp_mcu_act::Tanh(const p_matrix_qfix input, p_matrix_qfix output){
     const uint32_t size = input->cols * input->rows;
     
     for(uint32_t i = 0; i < size; i++){
-        qfloat exp_x = exp_qfloat(input->data[i]);
-        qfloat exp_negx = exp_qfloat(-input->data[i]);
-        output->data[i] = qfloat_div(exp_x - exp_negx, exp_x + exp_negx);
+        qfix exp_x = exp_qfix(input->data[i]);
+        qfix exp_negx = exp_qfix(-input->data[i]);
+        output->data[i] = qfix_div(exp_x - exp_negx, exp_x + exp_negx);
     }
 }
 
-void mlp_mcu_act::Sign(const p_matrix_qfloat input, p_matrix_qfloat output){
+void mlp_mcu_act::Sign(const p_matrix_qfix input, p_matrix_qfix output){
     const uint32_t size = input->cols * input->rows;
-    const qfloat one = float_to_qfloat(1.0f);
-    const qfloat zero = 0;
+    const qfix one = float_to_qfix(1.0f);
+    const qfix zero = 0;
     
     for(uint32_t i = 0; i < size; i++){
         output->data[i] = input->data[i] > 0 ? one : zero;
     }
 }
 
-void mlp_mcu_act::Softmax(const p_matrix_qfloat input, p_matrix_qfloat output){    
-    qfloat elem_exp_sum = 0;
+void mlp_mcu_act::Softmax(const p_matrix_qfix input, p_matrix_qfix output){    
+    qfix elem_exp_sum = 0;
     const uint32_t size = input->rows * input->cols;
-    qfloat elem_exp[size];
+    qfix elem_exp[size];
     for(uint32_t i = 0; i < size; i++){
-        elem_exp[i] = exp_qfloat(input->data[i]);
+        elem_exp[i] = exp_qfix(input->data[i]);
         elem_exp_sum += elem_exp[i];
     }
     
     for(uint32_t i = 0; i < size; i++){
-        output->data[i] = qfloat_div(elem_exp[i], elem_exp_sum);
+        output->data[i] = qfix_div(elem_exp[i], elem_exp_sum);
     }
 }
 
-void get_act_func(ACT_TYPE type, const p_matrix_qfloat input, p_matrix_qfloat output, qfloat alpha) {
+void get_act_func(ACT_TYPE type, const p_matrix_qfix input, p_matrix_qfix output, qfix alpha) {
     switch(type) {
         case type_ReLU: mlp_mcu_act::ReLU(input, output); break;
         case type_ReLU6: mlp_mcu_act::ReLU6(input, output); break;
