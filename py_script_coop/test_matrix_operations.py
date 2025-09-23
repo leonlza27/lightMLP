@@ -85,9 +85,11 @@ def check(tg, raw, excepted):
     rawresu = np.array(rawresucast)
     diff_sys = rawresu - exceptcast
     diff = resu - exceptcast
+    diff_bet = rawresu - resu
     
     print(f"[sys_diff] aver:{np.std(diff_sys)}\nmax:{np.max(diff_sys)}\nmin:{np.min(diff_sys)}\nvar:{np.var(diff_sys)}")
     print(f"[actual_diff] aver:{np.std(diff)}\nmax:{np.max(diff)}\nmin:{np.min(diff)}\nvar:{np.var(diff)}")
+    print("diff between sys and optized(raw - actual)\n max:", np.max(diff_bet)," min:",np.min(diff_bet))
 
 
 def test_add():
