@@ -1,4 +1,4 @@
-#include "activator.h"
+#include "activator_vecwide.h"
 
 void mlp_mcu_act::ReLU(const p_matrix_qfix input, p_matrix_qfix output){
     const uint32_t size = input->cols * input->rows;

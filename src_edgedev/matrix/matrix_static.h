@@ -23,8 +23,10 @@ extern "C" {
 //初始化分配
 matrix_bp_data *new_matrix_bp();
 
+void matrix_bp_init(matrix_bp_data *matrix, uint16_t m, uint16_t n, bp *data);
+
 //调整:m(行数) * n(列数)
-void matrix_bp_set(matrix_bp_data *matrix,uint16_t m,uint16_t n,bp *data);
+void matrix_bp_set(matrix_bp_data *matrix, uint16_t m, uint16_t n, bp *data);
 
 void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu);
 

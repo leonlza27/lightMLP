@@ -12,6 +12,24 @@ matrix_bp_data *new_matrix_bp(){
     return ret;
 }
 
+void matrix_bp_init(matrix_bp_data *matrix, uint16_t m, uint16_t n, bp *data){
+    matrix->cols = n;
+    matrix->rows = m;
+    
+    matrix->data = (bp*)malloc(m * n * sizeof(bp));
+    
+    if(data == 0) {
+        for(uint32_t i = 0; i < m*n; i++) {
+            matrix->data[i] = 0;
+        }
+        return;
+    }
+    for(uint32_t i = 0; i < m*n; i++) {
+        matrix->data[i] = data[i];
+    }
+
+}
+
 
 void matrix_bp_set(matrix_bp_data *matrix, uint16_t m, uint16_t n, bp *data) {    
     if(matrix->data == NULL) {
