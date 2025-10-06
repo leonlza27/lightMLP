@@ -3,7 +3,6 @@
 #define _softpool_pc_
 #include <malloc.h>
 #include <mutex>
-#include <unordered_map>
 #include <string.h>
 
 #define _8KB_PAGE_UNIT 8 * 1024
@@ -18,21 +17,8 @@
 #define freepage(ptr, size) munmap(ptr, size)
 #endif
 
-class NormPool{
-private:
-    char *bitmap;   //位图索引 
-    void *poolmem;  //8kb * n 总pool内存
-    size_t memLength;   // **记录大小可用于mmap释放*
-
-    inline size_t matchBitmapFreePart(size_t objsize);
-    inline void changeBitmapMark(size_t start, size_t end, char bitmark);
-public:
-    NormPool(int units);
-    ~NormPool();
-
-    void *poolmalloc(size_t size);
-    void poolfree(void *ptr, size_t free_size);
-};
+#include "DynPool.h"
+#include "ArenaPool.h"
 
 class SoftPool{
 private:

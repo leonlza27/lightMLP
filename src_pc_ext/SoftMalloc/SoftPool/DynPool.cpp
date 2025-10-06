@@ -1,21 +1,30 @@
-#include "softpool.h"
+#include "DynPool.h"
 
 inline size_t NormPool::matchBitmapFreePart(size_t objsize){
-    size_t loopnum = memLength - objsize;
-    for(size_t i = 0; i<loopnum; i++){
-        if(bitmap[i / 8]&(1 <<(i%8)) == 0){
-            size_t matchend = i + objsize;
-            for(size_t j = i + 1; j < matchend; j++){
-                if(bitmap[j / 8]&(1 <<(j%8)) == 1){
-                    i = j;
-                    continue;
-                }
+   if (memLength < objsize) return -1;
+    
+    size_t left = 0;   // 窗口左边界
+    size_t right = 0;  // 窗口右边界
+    
+    // 滑动窗口查找连续的0
+    while (right < memLength) {
+        // 如果right位置是1，则重置窗口
+        size_t right_byte_index = right / 8;
+        size_t right_bit_index = right % 8;
+        if ((bitmap[right_byte_index] & (1 << right_bit_index)) != 0) {
+            // 遇到1，重置窗口
+            left = right + 1;
+        } else {
+            // right位置是0
+            // 检查窗口大小是否达到要求
+            if (right - left + 1 == objsize) {
+                return left;  // 返回起始位置
             }
-            return i;
         }
+        right++;  // 扩展右边界
     }
-
-    return -1;
+    
+    return -1;  // 未找到
 }
 
 inline void NormPool::changeBitmapMark(size_t start, size_t end, char bitmark){
@@ -31,9 +40,9 @@ inline void NormPool::changeBitmapMark(size_t start, size_t end, char bitmark){
     
 }
 
-NormPool::NormPool(int units){
-    poolmem = alloc_8kbpages(units);
-    memLength = units * _8KB_PAGE_UNIT;
+NormPool::NormPool(){
+    poolmem = alloc_8kbpages(1);
+    memLength = _8KB_PAGE_UNIT;
     bitmap = (char*)malloc(memLength / 8);
     memset(bitmap, 0, memLength / 8);
 }
