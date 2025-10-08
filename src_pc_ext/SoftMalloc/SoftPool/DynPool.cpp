@@ -30,11 +30,11 @@ inline size_t NormPool::matchBitmapFreePart(size_t objsize){
 inline void NormPool::changeBitmapMark(size_t start, size_t end, char bitmark){
     if(bitmark){
         for(size_t i = start; i<end; i++){
-            bitmap[i / 8]|=bitmark<<(i%8);
+            bitmap[i / 8]|=1<<(i%8);
         }
     }else{
         for(size_t i = start; i<end; i++){
-            bitmap[i / 8]&= ~(bitmark<<(i%8));
+            bitmap[i / 8]&= ~(1<<(i%8));
         }
     }
     
@@ -55,22 +55,38 @@ NormPool::~NormPool(){
     memLength= 0;
 }
 
-void *NormPool::poolmalloc(size_t size){
-    size_t inpoolOffset = matchBitmapFreePart(size);
+char NormPool::poolAllocate(SfMetaData *ret, size_t size){
 
-    if(inpoolOffset == -1) return 0;
+    size_t offset = matchBitmapFreePart(size);
+    if(offset = -1){
+        ret->rawptr = 0;
+        return -1;
+    }
 
-    changeBitmapMark(inpoolOffset, inpoolOffset+size, 1);
+    size_t LenSpread = lstSpreadPos.size();
 
-    return poolmem + inpoolOffset;
+    if(LenSpread){
+        ret->MetaIdx = LenSpread - 1;
+        sfptr_lst[LenSpread - 1] = ret;
+        lstSpread.pop_back();
+        
+    }else{
+        ret->MetaIdx = sfptr_lst.size();
+        sfptr_lst.push_back(ret);
+    }
+
+    ret->rawptr = poolmem + offset;
+    ret->poolPending = this;
+    changeBitmapMark(offset, offset+size, 1);
+
+    ret->actualPoolType = Norm;
+
+    return 0;
 }
 
-void NormPool::poolfree(void *ptr, size_t free_size){
-    size_t inpoolOffset = 0;
-    char *calcLoopStart = (char*)poolmem;
-    while(calcLoopStart<ptr){
-        calcLoopStart++;
-        inpoolOffset++;
-    }
-    changeBitmapMark(inpoolOffset, inpoolOffset + free_size, 0);
+void NormPool::poolfree(SfMetaData *metadata){
+    short DelTg = metadata->MetaIdx;
+    sfptr_lst[DelTg] = 0;
+    lstSpreadPos.push_back(DelTg);
+
 }

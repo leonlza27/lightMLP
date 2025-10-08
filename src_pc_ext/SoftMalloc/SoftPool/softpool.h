@@ -4,6 +4,7 @@
 #include <malloc.h>
 #include <mutex>
 #include <string.h>
+#include <forward_list>
 
 #define _8KB_PAGE_UNIT 8 * 1024
 
@@ -18,13 +19,18 @@
 #endif
 
 #include "DynPool.h"
-#include "ArenaPool.h"
+
+#include "../softmalloc.h"
 
 class SoftPool{
 private:
+    std::forward_list<NormPool*> NormPools;
+
 
 public:
-    SoftPool(size_t initalsize);
+    SoftPool();
+    void *Allocate(size_t size);
+
     
 };
 
