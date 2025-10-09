@@ -11,7 +11,7 @@ private:
     void *poolmem;  //8kb总pool内存
     size_t memLength;   // 总可用字节数
 
-    std::mutex AllocationLock;  //分配锁
+    std::mutex MetaWriteLock;   //元数据写入锁
     std::mutex GCLock;          //GC锁,处理时池全局锁定
 
     std::vector<SfMetaData*> sfptr_lst;
@@ -25,6 +25,8 @@ public:
 
     char poolAllocate(SfMetaData *ret, size_t size);
     void poolfree(SfMetaData *metadata);
+
+    inline void* inferRawAddress(short block0_offset) const;
 };
 
 //中对象池,4页&32B padding

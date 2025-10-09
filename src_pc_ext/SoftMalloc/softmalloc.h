@@ -13,10 +13,11 @@ enum SubPooltype{
 static SoftPool _GlobSoftAllocator;
 
 struct SfMetaData{
-    void *rawptr;                   //得到的原始地址
     void *poolPending;              //依赖池地址
+    std::mutex *PoolGCLockRef;
     SubPooltype actualPoolType;
-    std::mutex &PoolGCLockRef;
+    short block0_Offset;            //位图地址0标记池偏移
+    short blockUsed;                //位图已用块数
     short MetaIdx;
 };
     
@@ -25,6 +26,7 @@ struct SfMetaData{
 template<typename T, SoftPool &SfAllocator = _GlobSoftAllocator>
 class sfptr{
 private:
+    SfMetaData metathis;
     T *addr;
 public:
     sfptr(size_t elemlength);

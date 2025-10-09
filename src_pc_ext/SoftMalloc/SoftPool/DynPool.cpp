@@ -56,37 +56,56 @@ NormPool::~NormPool(){
 }
 
 char NormPool::poolAllocate(SfMetaData *ret, size_t size){
+    std::lock_guard<std::mutex> allocGuard(MetaWriteLock);
 
+    //查找可用
     size_t offset = matchBitmapFreePart(size);
     if(offset = -1){
-        ret->rawptr = 0;
+        ret->blockUsed = 0;
         return -1;
     }
 
+    //添加元数据
     size_t LenSpread = lstSpreadPos.size();
 
     if(LenSpread){
         ret->MetaIdx = LenSpread - 1;
         sfptr_lst[LenSpread - 1] = ret;
-        lstSpread.pop_back();
+        lstSpreadPos.pop_back();
         
     }else{
         ret->MetaIdx = sfptr_lst.size();
         sfptr_lst.push_back(ret);
     }
-
-    ret->rawptr = poolmem + offset;
-    ret->poolPending = this;
     changeBitmapMark(offset, offset+size, 1);
 
+    //元数据绑定
+    ret->block0_Offset = offset;
+    ret->blockUsed = size;
+    ret->poolPending = this;
+    ret->PoolGCLockRef = &GCLock;
     ret->actualPoolType = Norm;
 
     return 0;
 }
 
 void NormPool::poolfree(SfMetaData *metadata){
+    std::lock_guard<std::mutex> freeGuard(MetaWriteLock);
+
+    //池标记清除
     short DelTg = metadata->MetaIdx;
     sfptr_lst[DelTg] = 0;
     lstSpreadPos.push_back(DelTg);
+    short offsetStart = metadata->block0_Offset;
+    changeBitmapMark(offsetStart, offsetStart + metadata->blockUsed, 0);
 
+    //元数据解绑
+    metadata->block0_Offset = -1;
+    metadata->blockUsed = 0;
+    metadata->poolPending = 0;
+    metadata->PoolGCLockRef = 0;
+}
+
+inline void *NormPool::inferRawAddress(short block0_offset) const{
+    return poolmem + block0_offset;
 }
