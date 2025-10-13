@@ -2,9 +2,9 @@
 #define _softmalloc_dynpool_
 
 #include "softpool.h"
-#include <vector>
+#include <set>
 
-//小对象池,2页&8B padding
+//小对象池,2页&8b padding
 class NormPool{
 private:
     char *bitmap;   //位图索引 
@@ -14,11 +14,8 @@ private:
     std::mutex MetaWriteLock;   //元数据写入锁
     std::mutex GCLock;          //GC锁,处理时池全局锁定
 
-    std::vector<SfMetaData*> sfptr_lst;
-    std::vector<short> lstSpreadPos;
+    std::set<SfMetaData*, SfMetaPtrIdxCmp> objDatas;
 
-    inline size_t matchBitmapFreePart(size_t objsize);
-    inline void changeBitmapMark(size_t start, size_t end, char bitmark);
 public:
     NormPool();
     ~NormPool();
@@ -29,15 +26,13 @@ public:
     inline void* inferRawAddress(short block0_offset) const;
 };
 
-//中对象池,4页&32B padding
+//中对象池,4页&32b padding
 class MediumPool{
     private:
     char *bitmap;   //位图索引 
     void *poolmem;  //16kb总pool内存
     size_t memLength;   // 总可用字节数
 
-    inline size_t matchBitmapFreePart(size_t objsize);
-    inline void changeBitmapMark(size_t start, size_t end, char bitmark);
 public:
     MediumPool();
     ~MediumPool();

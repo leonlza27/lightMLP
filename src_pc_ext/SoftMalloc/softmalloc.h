@@ -4,6 +4,7 @@
 #include "SoftPool/softpool.h"
 
 enum SubPooltype{
+    _none,
     Norm,
     Medium,
     LSO
@@ -16,9 +17,14 @@ struct SfMetaData{
     void *poolPending;              //依赖池地址
     std::mutex *PoolGCLockRef;
     SubPooltype actualPoolType;
-    short block0_Offset;            //位图地址0标记池偏移
-    short blockUsed;                //位图已用块数
-    short MetaIdx;
+    short block0_Offset;            //起始相对池位移
+    short blockUsed;                //已用大小(按padding记)
+};
+
+class SfMetaPtrIdxCmp{
+    bool operator()(const SfMetaData *dat1, const SfMetaData *dat2){
+        return dat1->block0_Offset < dat2->block0_Offset;
+    }
 };
     
 //sfptr<T> 实现
