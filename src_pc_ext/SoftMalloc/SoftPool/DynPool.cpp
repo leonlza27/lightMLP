@@ -1,13 +1,10 @@
 #include "DynPool.h"
 
-static SfMetaData _objdata_set_head{0,0,_none,0,0};
-
 NormPool::NormPool(){
     poolmem = alloc_8kbpages(1);
     memLength = _8KB_PAGE_UNIT;
     bitmap = (char*)malloc(memLength / 8);
     memset(bitmap, 0, memLength / 8);
-    objDatas.insert(&_objdata_set_head);
 }
 
 NormPool::~NormPool(){
@@ -21,15 +18,29 @@ NormPool::~NormPool(){
 char NormPool::poolAllocate(SfMetaData *ret, size_t size){
     std::lock_guard<std::mutex> allocLock(MetaWriteLock);
 
-   
+    short lastEnd = 0;
+    for(auto part : objDatas){
+         if((part->block0_Offset - lastEnd + 1) <= size){
+             ret->block0_Offset = lastEnd;
+             break;
+         }
+         lastEnd = part->block0_Offset + part->blockUsed;
+    }
+    
+    if((lastEnd + size) > 8193){
+        //触发池压缩GC
+    }else{
+        ret->block0_Offset = lastEnd;
+    }
 
 
     //元数据绑定
-    //ret->block0_Offset = offset;
     ret->blockUsed = size;
     ret->poolPending = this;
     ret->PoolGCLockRef = &GCLock;
     ret->actualPoolType = Norm;
+
+    objDatas.insert(ret);
 
     return 0;
 }
@@ -37,8 +48,7 @@ char NormPool::poolAllocate(SfMetaData *ret, size_t size){
 void NormPool::poolfree(SfMetaData *metadata){
     std::lock_guard<std::mutex> freeGuard(MetaWriteLock);
 
-
-
+    
 
     //元数据解绑
     metadata->block0_Offset = -1;
