@@ -12,90 +12,63 @@ struct TestData{
     short length;
 };
 
-class TestDataCmp{
+//区间[start,end)
+struct DataStorage{
+    short start;
+    short end;
+};
+
+class DataStorageCmp{
 public:
-    bool operator()(const TestData* _cmpl, const TestData* _cmpr)const{
-        return _cmpl->ind0 < _cmpr->ind0;
+    bool operator()(const DataStorage& _cmpl, const DataStorage& _cmpr)const{
+        return _cmpl.start < _cmpr.start;
     }
 };
 
-std::mutex SituateMallocLock;
-std::set<TestData*, TestDataCmp> plset;
-
-FILE *_log;
-
-int cycles = 0;
-
-inline void ReportSpace(){
-    fprintf(_log, "%4d: |", ++cycles);
-    for(auto p : plset){
-        fprintf(_log, " %4d~%4d |", p->ind0, p->length + p->ind0 -1);
-    }
-    fprintf(_log, "\n");
-}
-
-void SimAllocate(short size, TestData *ret){
-    std::lock_guard<std::mutex> AllocateLock(SituateMallocLock);
-    short lastEnd = -1;
-    for(auto part : plset){
-         if((part->ind0 - lastEnd) >= size){
-            break;
-         }
-         lastEnd = part->ind0 + part->length - 1;
-    }
-    if(lastEnd + size > 8192){
-        ret->ind0 = -1;
-        ret->length = 0;
-        ReportSpace();
-        return;
-    }
-
-    ret->ind0 = lastEnd + 1;
-    ret->length = size;
-
-    plset.insert(ret);
-    ReportSpace();
-}
-
-void SimFree(TestData *delObj){
-    std::lock_guard<std::mutex> FreeLock(SituateMallocLock);
-    plset.erase(delObj);
-    delObj->length = 0;
-    delObj->ind0 = -1;
-    ReportSpace();
-}
-
-void TestHandler(){
-    std::thread::id _tid = std::this_thread::get_id();
-    TestData privHandle;
-    short _size = rand()%255 + 1;
-    printf("%ld: try allocate %d B\n",_tid,_size);
-    SimAllocate(_size,&privHandle);
-    if(privHandle.length == 0){
-        printf("%ld: malloc failed\n",_tid);
-        return;
-    }
-    short _holdtime = rand()%490 + 10;
-    printf("%ld: handle succeed(for about %d ms)\n",_tid,_holdtime);
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(_holdtime));
-    SimFree(&privHandle);
-    printf("%ld: handle free\n",_tid);
-}
-
+template<typename T>
+class PooledSigleAllocator{
+private:
+public:
+    using value_type = T;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using reference = T&;
+    using const_reference = const T&;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
     
+    template<class U>
+    struct rebind{ 
+        using other = PooledSigleAllocator<U>; 
+    }; 
+
+
+    PooledSigleAllocator()noexcept{}
+    ~PooledSigleAllocator()noexcept{}
+
+    template<typename U>
+    PooledSigleAllocator(const PooledSigleAllocator<U>&)noexcept{}
+    
+    T *allocate(size_t size){
+        printf("Allocate num:%lld\n",size);
+        return static_cast<T*>(::operator new(sizeof(T) * size));
+    }
+
+    void deallocate(T *ptr, size_t size)noexcept{
+        ::operator delete(ptr);
+
+    }    
+
+};
+
+std::mutex SituateMallocLock;
+std::set<DataStorage,DataStorageCmp,PooledSigleAllocator<DataStorage>> plset;
 
 int main(){
     srand((unsigned int)time(0));
-    _log = fopen("mallocrep.txt", "w");
     std::thread testthreads[100];
-    for(auto &i : testthreads){
-        i = std::thread(TestHandler);
-    }
-    for(auto &i : testthreads){
-        i.join();
-    }
-    TestHandler();
+    
+    plset.insert({0,0});
 
     return 0;
 }
