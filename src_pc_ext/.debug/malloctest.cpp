@@ -8,15 +8,12 @@
 
 //模拟元数据分配
 
-struct TestData{
-    short ind0;
-    short length;
-};
-
-//区间[start,end)
+//元数据结构体,区间[start,end)
 struct DataStorage{
     short start;
     short end;
+
+    DataStorage() : start(-1), end(-1){}
 };
 
 class DataStorageCmp{
@@ -24,6 +21,13 @@ public:
     bool operator()(const DataStorage& _cmpl, const DataStorage& _cmpr)const{
         return _cmpl.start < _cmpr.start;
     }
+};
+
+class DataStoragePtrCmp{
+public:     
+    bool operator()(const DataStorage* _cmpl, const DataStorage* _cmpr)const{
+        return _cmpl->start < _cmpr->start;   
+    }   
 };
 
 //模拟单例对象池
@@ -39,15 +43,16 @@ public:
 
     void init(size_t capacity){
         mem = (T*)malloc(capacity * sizeof(T));
-        ava_space_start.push(mem);
+        for(size_t i = 0; i < capacity; i++)
+            ava_space_start.push(mem + i);
     }
 
     T* palloc(){
+        if(ava_space_start.empty()){
+            return 0;
+        }
         T* ret = ava_space_start.top();
         ava_space_start.pop();
-        if(ava_space_start.empty()){
-            ava_space_start.push(ret + 1);
-        }
         return ret;
     }
 
@@ -75,13 +80,14 @@ public:
         using other = PooledSigleAllocator<U>; 
     }; 
 
-    PooledSigleAllocator()noexcept : _pool(4097){}
+    PooledSigleAllocator()noexcept : _pool(8192){}
     ~PooledSigleAllocator()noexcept{}
 
     template<typename U>
     PooledSigleAllocator(const PooledSigleAllocator<U>&)noexcept{}
     
     T *allocate(size_t size){
+        if(size > 1) return 0;
         return static_cast<T*>(_pool.palloc());
     }
 
@@ -90,16 +96,69 @@ public:
     }    
 
 };
-
 std::mutex SituateMallocLock;
-std::set<DataStorage,DataStorageCmp,PooledSigleAllocator<DataStorage>> plset;
+std::set<DataStorage*,DataStoragePtrCmp,PooledSigleAllocator<DataStorage*>> plset;
+
+FILE *memLayout;
+
+void printMemLayout(){
+    fprintf(memLayout, ">");
+    for(auto i : plset){
+        fprintf(memLayout, "|[%4d~%4d)\t",i->start,i->end);
+    }
+    fprintf(memLayout, "|\n");
+}
+
+//main test fns
+
+bool SimAlloc(size_t size, DataStorage *dsret){
+    std::lock_guard<std::mutex> malloclock(SituateMallocLock);
+    short LastEnd = 0;
+    for(auto i : plset){
+        if(i->start - LastEnd >= size) break;
+        LastEnd = i->end;
+    }
+    if(LastEnd + size > 8192) return 0;
+
+    dsret->start = LastEnd;
+    dsret->end = LastEnd + size;
+    plset.insert(dsret);
+    printMemLayout();
+    return 1;
+}
+
+void SimFree(DataStorage *dptr){
+    std::lock_guard<std::mutex> freelock(SituateMallocLock);
+    plset.erase(dptr);
+    dptr->start = -1;
+    dptr->end = -1;
+    printMemLayout();
+}
+
+//test thread fn
+void TestHandler(){
+    DataStorage _dataThis;
+    size_t size = rand() % 255 + 1;
+    if(!SimAlloc(size, &_dataThis)){
+        return;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 999 + 1));
+    SimFree(&_dataThis);
+}
 
 int main(){
     srand((unsigned int)time(0));
     std::thread testthreads[100];
-    
+    memLayout = fopen("layout.txt", "w");
 
-    plset.insert({0,0});
+    for(auto &i : testthreads){
+        i = std::thread(TestHandler);
+    }
+    for(auto &i : testthreads){
+        i.join();
+    }
+
+    fclose(memLayout);
 
     return 0;
 }
