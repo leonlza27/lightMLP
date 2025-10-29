@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <stdint.h>
+#include <string.h>
 
 struct PoolHead{
     uint16_t fullsize;
@@ -21,14 +22,22 @@ private:
 public:
     mempool(){
         mem = (char*)mmap(0, 8192, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+        memset(mem, 0, 8192);
         PoolHead *head = (PoolHead*)mem;
         head->fullsize = 8192;
         head->padding = 4;
         
-        dataStart = mem + sizeof(PoolHead);
-        ((DataNode*)dataStart)->end = 8;
-        ((DataNode*)dataStart)->prev = -1;
-        ((DataNode*)dataStart)->startNext = -1;
+        dataStart = mem + 4;
+        DataNode *lkhead = (DataNode*)dataStart;
+        DataNode *lktail = (DataNode*)(dataStart + 8180);
+        
+        lkhead->end = 8;
+        lkhead->startNext = 8180;
+        lkhead->prev = -1;
+
+        lktail->startNext = -1;
+        lktail->end = 8188;
+        lktail->prev = 0;
     }
     
     ~mempool(){
@@ -37,43 +46,50 @@ public:
     }
 
     void *pAlloc(uint16_t size){
-        size_t total_size = size + sizeof(DataNode);
+        size_t total_size = size + 4;
         size_t _needed = total_size + (4 - total_size%4)*(total_size%4 != 0);
         DataNode *curnode;
-        int8_t _idxnxt = 0;
-        int8_t _idxcur = 0;
-        int8_t ava0 = 0;
-        do{
-            curnode = (DataNode*)(dataStart + _idxnxt);
-            ava0 = curnode->end;
+        int16_t _idxnxt = 0;
+        int16_t _idxcur = 0;
+        int16_t ava0 = 0;        //可用起始偏移
+        while (_idxcur != -1){
+            curnode = (DataNode*)(dataStart + _idxcur);
             _idxnxt = curnode->startNext;
-
+            ava0 = curnode->end;
             if(_idxnxt - ava0 >= _needed) break;
-
+            
             _idxcur = _idxnxt;
-
-        }while (_idxnxt != -1);
+        }
+        if(_idxcur == -1) return 0;
         
-        //头 4b
-        if(ava0 + _needed > 8188) return 0;
+        DataNode *nodeNew = (DataNode*)(dataStart + ava0);
+        nodeNew->end = ava0 + _needed;
+        nodeNew->prev = _idxcur;
+        nodeNew->startNext = _idxnxt;
         
-        DataNode *_insert = (DataNode*)(dataStart + ava0);
-        _insert->startNext = _idxnxt;
-        _insert->end = ava0 + _needed;
-        _insert->prev = _idxcur;
-        
-
         return dataStart + ava0 + 6;
     }
 
     void pFree(void* ptr){
-        int8_t delidx = ((size_t)ptr) - ((size_t)dataStart) - 6;
+        if(ptr == 0) return;
+        size_t delidx = ((size_t)ptr) - ((size_t)dataStart) - 6;
+        if(delidx >= 8172 || delidx < 8) return;
+
+        DataNode *delNode = (DataNode*)(dataStart + delidx);
+        if(delNode->end == 0) return;
+        DataNode *prev_of_del = (DataNode*)(dataStart + delNode->prev);
+        DataNode *next_of_del = (DataNode*)(dataStart + delNode->startNext);
+        
+        next_of_del->prev = delNode->prev;
+        prev_of_del->startNext = delNode->startNext;
+        delNode->end = 0;
     }
 };
 
 int main(){
     mempool pool;
     printf("%lu\n",sizeof(DataNode));
+    printf("%lu\n",sizeof(PoolHead));
 
     return 0;
 }
