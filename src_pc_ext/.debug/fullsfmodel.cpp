@@ -38,6 +38,8 @@ public:
         lktail->startNext = -1;
         lktail->end = 8188;
         lktail->prev = 0;
+
+        //total 8172B
     }
     
     ~mempool(){
@@ -47,7 +49,10 @@ public:
 
     void *pAlloc(uint16_t size){
         size_t total_size = size + 4;
-        size_t _needed = total_size + (4 - total_size%4)*(total_size%4 != 0);
+        size_t _needed = (total_size + 3) & (~3); 
+        
+        printf("input:%d needed:%lu\n",size,_needed);
+
         DataNode *curnode;
         int16_t _idxnxt = 0;
         int16_t _idxcur = 0;
@@ -57,15 +62,21 @@ public:
             _idxnxt = curnode->startNext;
             ava0 = curnode->end;
             if(_idxnxt - ava0 >= _needed) break;
-            
+            printf("idxcur:%d\n",_idxcur);
             _idxcur = _idxnxt;
         }
-        if(_idxcur == -1) return 0;
+        printf("final idxcur:%d ava start:%d\n",_idxcur, ava0);
+        if(_idxnxt == -1) return 0;
         
         DataNode *nodeNew = (DataNode*)(dataStart + ava0);
         nodeNew->end = ava0 + _needed;
         nodeNew->prev = _idxcur;
         nodeNew->startNext = _idxnxt;
+
+        DataNode *nnewNext = (DataNode*)(dataStart + _idxnxt);
+
+        curnode->startNext = ava0;
+        nnewNext->prev = ava0;
         
         return dataStart + ava0 + 6;
     }
@@ -88,8 +99,14 @@ public:
 
 int main(){
     mempool pool;
-    printf("%lu\n",sizeof(DataNode));
-    printf("%lu\n",sizeof(PoolHead));
-
+    
+    printf("alloc1\n");
+    int *test = (int*)pool.pAlloc(sizeof(int)*5);
+    printf("addr:%lu\n",(size_t)test);
+    printf("\nalloc2\n");
+    int *test2 = (int*)pool.pAlloc(sizeof(int)*5);
+    printf("addr:%lu\n",(size_t)test2);    
+    pool.pFree(test);
+    
     return 0;
 }
