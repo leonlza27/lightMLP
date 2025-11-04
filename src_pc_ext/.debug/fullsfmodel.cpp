@@ -8,7 +8,7 @@
 #include <time.h>
 
 struct PoolHead{
-    uint16_t fullsize;
+    uint16_t objnum;
     uint16_t padding;
 };
 
@@ -23,14 +23,13 @@ class mempool{
 private:
     char *mem;
     char *dataStart;
-
     std::mutex mallocLock;
 public:
     mempool(){
         mem = (char*)mmap(0, 8192, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
         memset(mem, 0, 8192);
         PoolHead *head = (PoolHead*)mem;
-        head->fullsize = 8192;
+        head->objnum = 0;
         head->padding = 4;
         
         dataStart = mem + 4;
@@ -80,6 +79,8 @@ public:
 
         curnode->startNext = ava0;
         nnewNext->prev = ava0;
+
+        ((PoolHead*)mem)->objnum++;
         
         return dataStart + ava0 + 6;
     }
@@ -98,7 +99,14 @@ public:
         next_of_del->prev = delNode->prev;
         prev_of_del->startNext = delNode->startNext;
         delNode->end = 0;
+
+        int16_t obnumcur = ((PoolHead*)mem)->objnum; 
+        obnumcur -= 1 * !(obnumcur < 0);
+        ((PoolHead*)mem)->objnum = obnumcur;
+        
     }
+
+    int16_t GetObjNum() const { return ((PoolHead*)mem)->objnum;}
 };
 
 mempool _mempool;
@@ -112,10 +120,10 @@ void testHandler(int _no){
         return;
     }
     int __handleTime = rand()%999 + 1;
-    printf("thread %d: succeed, hold for %d ms\n", _no, __handleTime);
+    printf("thread %d: succeed, addr %X\n", _no, testmem);
     std::this_thread::sleep_for(std::chrono::milliseconds(__handleTime));
     _mempool.pFree(testmem);
-    printf("thread %d: mem returned\n", _no);
+    printf("thread %d: mem returned after %d ms\n", _no, __handleTime);
 }
 
 int main(){
