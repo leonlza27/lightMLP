@@ -108,39 +108,3 @@ public:
 
     int16_t GetObjNum() const { return ((PoolHead*)mem)->objnum;}
 };
-
-mempool _mempool;
-
-void testHandler(int _no){
-    size_t _size = rand()%225 + 1;
-    char *testmem = (char*)_mempool.pAlloc(_size);
-    printf("thread %d: try get %lu B...\n", _no, _size);
-    if(testmem == 0) {
-        printf("thread %d: fail\n", _no);
-        return;
-    }
-    int __handleTime = rand()%999 + 1;
-    printf("thread %d: succeed, addr %X\n", _no, testmem);
-    std::this_thread::sleep_for(std::chrono::milliseconds(__handleTime));
-    _mempool.pFree(testmem);
-    printf("thread %d: mem returned after %d ms\n", _no, __handleTime);
-}
-
-int main(){
-    srand(time(0));
-
-    std::thread testThreads[256];
-    int nu = 0;
-    for(auto &t : testThreads){
-        t = std::thread(testHandler, nu);
-        nu++;
-    }
-
-    for(auto &t : testThreads){
-        t.join();
-    }
-
-    printf("%d\n",_mempool.GetObjNum());
-    
-    return 0;
-}
