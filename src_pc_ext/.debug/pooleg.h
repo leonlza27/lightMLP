@@ -1,16 +1,9 @@
-#include <stdio.h>
 #include <sys/mman.h>
 #include <stdint.h>
-#include <string.h>
 #include <mutex>
-#include <thread>
 #include <stdlib.h>
-#include <time.h>
 
-struct PoolHead{
-    uint16_t objnum;
-    uint16_t padding;
-};
+#include "spin_lock.h"
 
 //元数据头节点 空闲[end, startNext)
 struct DataNode{
@@ -21,18 +14,11 @@ struct DataNode{
 
 class mempool{
 private:
-    char *mem;
-    char *dataStart;
-    std::mutex mallocLock;
+    uint16_t objnum;
+    spin_lock mallocLock;
+    char dataStart[8188];
 public:
     mempool(){
-        mem = (char*)mmap(0, 8192, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-        memset(mem, 0, 8192);
-        PoolHead *head = (PoolHead*)mem;
-        head->objnum = 0;
-        head->padding = 4;
-        
-        dataStart = mem + 4;
         DataNode *lkhead = (DataNode*)dataStart;
         DataNode *lktail = (DataNode*)(dataStart + 8180);
         
@@ -48,12 +34,11 @@ public:
     }
     
     ~mempool(){
-        dataStart = 0;
-        munmap(mem, 8192);
+        
     }
 
     void *pAlloc(uint16_t size){
-        std::lock_guard<std::mutex> allocG(mallocLock);
+        mallocLock.lock();
         size_t total_size = size + 4;
         size_t _needed = (total_size + 3) & (~3); 
 
@@ -80,13 +65,14 @@ public:
         curnode->startNext = ava0;
         nnewNext->prev = ava0;
 
-        ((PoolHead*)mem)->objnum++;
-        
+        objnum++;
+
+        mallocLock.unlock();
         return dataStart + ava0 + 6;
     }
 
     void pFree(void* ptr){
-        std::lock_guard<std::mutex> freeG(mallocLock);
+        mallocLock.lock();
         if(ptr == 0) return;
         size_t delidx = ((size_t)ptr) - ((size_t)dataStart) - 6;
         if(delidx >= 8172 || delidx < 8) return;
@@ -100,11 +86,10 @@ public:
         prev_of_del->startNext = delNode->startNext;
         delNode->end = 0;
 
-        int16_t obnumcur = ((PoolHead*)mem)->objnum; 
-        obnumcur -= 1 * !(obnumcur < 0);
-        ((PoolHead*)mem)->objnum = obnumcur;
-        
+        objnum -= 1 * !(objnum < 0);
+        mallocLock.unlock();
     }
 
-    int16_t GetObjNum() const { return ((PoolHead*)mem)->objnum;}
+    int16_t GetObjNum() const { return objnum;}
 };
+
