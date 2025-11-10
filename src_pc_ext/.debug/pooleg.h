@@ -1,7 +1,7 @@
 #include <sys/mman.h>
 #include <stdint.h>
-#include <mutex>
 #include <stdlib.h>
+#include <mutex>
 
 #include "spin_lock.h"
 
@@ -15,7 +15,7 @@ struct DataNode{
 class mempool{
 private:
     uint16_t objnum;
-    spin_lock mallocLock;
+    alignas(2) spin_lock mallocLock;
     char dataStart[8188];
 public:
     mempool(){
@@ -38,7 +38,7 @@ public:
     }
 
     void *pAlloc(uint16_t size){
-        mallocLock.lock();
+        std::lock_guard<spin_lock> alloclk(mallocLock);
         size_t total_size = size + 4;
         size_t _needed = (total_size + 3) & (~3); 
 
@@ -53,7 +53,7 @@ public:
             if(_idxnxt - ava0 >= _needed) break;
             _idxcur = _idxnxt;
         }
-        if(_idxnxt == -1) return 0;
+        if(_idxnxt == -1) return 0;        
         
         DataNode *nodeNew = (DataNode*)(dataStart + ava0);
         nodeNew->end = ava0 + _needed;
@@ -66,13 +66,11 @@ public:
         nnewNext->prev = ava0;
 
         objnum++;
-
-        mallocLock.unlock();
         return dataStart + ava0 + 6;
     }
 
     void pFree(void* ptr){
-        mallocLock.lock();
+        std::lock_guard<spin_lock> freelk(mallocLock);
         if(ptr == 0) return;
         size_t delidx = ((size_t)ptr) - ((size_t)dataStart) - 6;
         if(delidx >= 8172 || delidx < 8) return;
@@ -87,7 +85,6 @@ public:
         delNode->end = 0;
 
         objnum -= 1 * !(objnum < 0);
-        mallocLock.unlock();
     }
 
     int16_t GetObjNum() const { return objnum;}

@@ -2,11 +2,12 @@
 #include <sys/mman.h>
 #include <stdint.h>
 #include <string.h>
-#include <mutex>
+#include "pooleg.h"
 #include <thread>
 #include <stdlib.h>
 #include <time.h>
 
+/*
 struct PoolHead{
     uint16_t objnum;
     uint16_t padding;
@@ -108,12 +109,13 @@ public:
 
     int16_t GetObjNum() const { return ((PoolHead*)mem)->objnum;}
 };
+*/
 
-mempool _mempool;
+mempool *_mempool;
 
 void testHandler(int _no){
     size_t _size = rand()%225 + 1;
-    char *testmem = (char*)_mempool.pAlloc(_size);
+    char *testmem = (char*)_mempool->pAlloc(_size);
     printf("thread %d: try get %lu B...\n", _no, _size);
     if(testmem == 0) {
         printf("thread %d: fail\n", _no);
@@ -122,13 +124,19 @@ void testHandler(int _no){
     int __handleTime = rand()%999 + 1;
     printf("thread %d: succeed, addr %X\n", _no, testmem);
     std::this_thread::sleep_for(std::chrono::milliseconds(__handleTime));
-    _mempool.pFree(testmem);
+    _mempool->pFree(testmem);
     printf("thread %d: mem returned after %d ms\n", _no, __handleTime);
 }
 
 int main(){
     srand(time(0));
 
+    _mempool = (mempool*)mmap(0, 8192, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if( _mempool == 0) return -1;
+    _mempool = new(_mempool) mempool();
+    printf("test begin\n");
+#ifdef MULTTHREAD_DBG
+    
     std::thread testThreads[256];
     int nu = 0;
     for(auto &t : testThreads){
@@ -139,8 +147,14 @@ int main(){
     for(auto &t : testThreads){
         t.join();
     }
-
-    printf("%d\n",_mempool.GetObjNum());
+#else 
+    char* cap = (char*)_mempool->pAlloc(10);
+    printf("addr: %X\n",cap);
+    _mempool->pFree(cap);
+#endif
     
+    printf("%d\n",_mempool->GetObjNum());
+    
+    munmap(_mempool, 8192);
     return 0;
 }
