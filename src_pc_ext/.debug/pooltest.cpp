@@ -50,7 +50,8 @@ public:
 class plswitcher{
 private:
     pllstNode *begin;
-    mempool *hotpools[10]; 
+    mempool *hotpools[10];
+    uint8_t usable_mark[10];
 public:
     plswitcher(){
         begin = (pllstNode*)mmap(0, 4096, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
@@ -71,9 +72,34 @@ public:
             munmap(curfree, 4096);
         }
     }
+
+    void *alllocate(size_t size){
+        void *ret = hotpools[0]->pAlloc(size);
+        if(ret) return ret;
+
+        return 0;
+    }
+
+    void free(void* ptr){
+        char* freePtr = (char*)ptr - 8;
+        DataNode *freeNode = (DataNode*)(freePtr);
+        DataNode *freeNext = (DataNode*)(freePtr + freeNode->fullsize + freeNode->startNext - freeNode->end);
+        mempool *parentPool = (mempool*)(freePtr - freeNext->prev - 3);
+        parentPool->pFree(ptr);
+    }
+
+    void __info(){
+        printf("pool0 elems: %d\n",hotpools[0]->GetObjNum());
+    }
 };
 
+plswitcher switcher;
+
 int main(){ 
+    char* cap = (char*)switcher.alllocate(10);
 
+    switcher.free(cap);
+    switcher.__info();
 
+    return 0;
 }
