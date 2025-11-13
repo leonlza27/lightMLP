@@ -92,5 +92,10 @@ public:
     }
 
     int16_t GetObjNum() const { return objnum;}
+    bool isOperating() { return mallocLock.is_locked();}
 };
 
+mempool *CreateMempool(){
+    void *mem = mmap(0,8192, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    return new(mem) mempool;
+}
