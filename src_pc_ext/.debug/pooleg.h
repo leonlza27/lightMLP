@@ -5,12 +5,12 @@
 
 #include "spin_lock.h"
 
-//元数据头节点 空闲[end, startNext)
+//元数据头节点 used[thisStart + 8, end)
 struct DataNode{
     int16_t end;
     int16_t startNext;
     int16_t prev;
-    int16_t fullsize;
+    int16_t thisStart;
 };
 
 class mempool{
@@ -26,12 +26,12 @@ public:
         lkhead->end = 8;
         lkhead->startNext = 8180;
         lkhead->prev = -1;
-        lkhead->fullsize = 8;
+        lkhead->thisStart = 0;
 
         lktail->startNext = -1;
         lktail->end = 8188;
         lktail->prev = 0;
-        lktail->fullsize = 8;
+        lktail->thisStart = 8180;
 
         //total 8172B
     }
@@ -62,7 +62,7 @@ public:
         nodeNew->end = ava0 + _needed;
         nodeNew->prev = _idxcur;
         nodeNew->startNext = _idxnxt;
-        nodeNew->fullsize = _needed;
+        nodeNew->thisStart = ava0;
 
         DataNode *nnewNext = (DataNode*)(dataStart + _idxnxt);
 
@@ -80,13 +80,13 @@ public:
         if(delidx >= 8172 || delidx < 8) return;
 
         DataNode *delNode = (DataNode*)(dataStart + delidx);
-        if(delNode->fullsize == 0) return;
+        if(delNode->thisStart == -1) return;
         DataNode *prev_of_del = (DataNode*)(dataStart + delNode->prev);
         DataNode *next_of_del = (DataNode*)(dataStart + delNode->startNext);
         
         next_of_del->prev = delNode->prev;
         prev_of_del->startNext = delNode->startNext;
-        delNode->fullsize = 0;
+        delNode->thisStart = -1;
 
         objnum -= 1 * !(objnum < 0);
     }
