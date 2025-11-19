@@ -4,20 +4,35 @@
 
 #include "pooleg.h"
 
+class cntHolder{
+private:
+    std::atomic<int8_t> &_counter;
+public:
+    cntHolder(std::atomic<int8_t> &counter):_counter(counter){
+        _counter.fetch_add(1,std::memory_order_acquire);
+    }
+
+    ~cntHolder(){
+        _counter.fetch_add(-1,std::memory_order::memory_order_acquire);
+    }
+
+};
+
 class plswitcher{
 private:
-    uint8_t HotPoolUsableIdx;
+    std::atomic<int8_t> tnum;
     uint8_t UsableIdx;
-    spin_lock globAllocLock;
-    mempool *hotpools[10];
-    mempool *pools[53];
+    spin_lock SetAttrLock;
+    std::atomic<int8_t> FullQueueFlag;
+    mempool *pools[15];
 public:
-    plswitcher(): HotPoolUsableIdx(1),UsableIdx(1){ 
-        for (auto &p : hotpools) {
+    plswitcher():UsableIdx(1){ 
+        for (auto &p : pools) {
             p = 0;
         }
         pools[0] = CreateMempool();
-        hotpools[0] = pools[0];
+        tnum = 0;
+        FullQueueFlag = 0;
     }
 
     ~plswitcher(){
@@ -27,11 +42,31 @@ public:
     }
 
     void *alllocate(size_t size){
-        while(globAllocLock.is_locked()){
+        cntHolder hld(tnum);
+
+        //FullQueueFlag.store((tnum > 15)||(tnum > 5 && FullQueueFlag.load(std::memory_order_acquire)),std::memory_order_acquire);
+        
+        bool curFlag = FullQueueFlag.load(std::memory_order_relaxed);
+        int curT = tnum.load(std::memory_order_relaxed);
+
+        // 锁死条件
+        bool lockCond = (curT > 15);
+
+        // 解锁条件
+        bool unlockCond = (curT <= 5);
+
+        // 状态机
+        bool nextFlag = (curFlag & !unlockCond) | (!curFlag & lockCond);
+
+        FullQueueFlag.store(nextFlag, std::memory_order_release);
+        
+        printf("cur waiting threads: %d,threadLock :%d\n",tnum.load(),nextFlag);
+        while(SetAttrLock.is_locked()){
             std::this_thread::yield();
         }
+        
         void* retAddr;
-        for(auto &p : hotpools){
+        for(auto &p : pools){
             if(p == 0) break;
             if(!p->isOperating()){
                 retAddr = p->pAlloc(size);
@@ -39,21 +74,13 @@ public:
             }
         }
 
-        //热池未满:追加
-        if(HotPoolUsableIdx < 10){
-            printf("pool: extenction occupyed\n");
-            std::lock_guard<spin_lock> appendLock(globAllocLock);
+        if(UsableIdx < 15){
+            std::lock_guard<spin_lock> attrLock(SetAttrLock);
             mempool *pNew = CreateMempool();
             pools[UsableIdx] = pNew;
-            hotpools[HotPoolUsableIdx] = pNew;
             UsableIdx++;
-            HotPoolUsableIdx++;
             return pNew->pAlloc(size);
         }
-
-
-        //扫描&更改
-
 
         printf("pool: full\n");
 
@@ -67,11 +94,17 @@ public:
         parentPool->pFree(ptr);
     }
 
+    bool isQueueAvaliable() {return FullQueueFlag.load(std::memory_order_relaxed);}    
+
 };
 
 plswitcher *switcher;
+spin_lock releaseThread;
 
 void testHandler(){
+     while(releaseThread.is_locked()){
+            std::this_thread::yield();
+        }
     size_t _size = rand()%225 + 1;
     char *testmem = (char*)switcher->alllocate(_size);
     if(testmem == 0) {
@@ -89,9 +122,11 @@ int main(){
 
     std::vector<std::thread> workers;
     workers.reserve(1024);
-    for(int i = 0; i< 1024; i++)
+    releaseThread.lock();
+    for(int i = 0; i< 64; i++)
         workers.emplace_back(testHandler);
 
+    releaseThread.unlock();
     for(auto &t : workers) t.join();    
 
     return 0;

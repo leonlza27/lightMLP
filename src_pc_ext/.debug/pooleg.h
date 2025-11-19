@@ -91,7 +91,7 @@ public:
         objnum -= 1 * !(objnum < 0);
     }
 
-    int16_t GetObjNum() const { return objnum;}
+    inline int16_t GetObjNum() const { return objnum;}
     bool isOperating() { return mallocLock.is_locked();}
 };
 
