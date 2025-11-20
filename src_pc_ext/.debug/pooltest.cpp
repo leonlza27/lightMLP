@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <vector>
+#include <map>
 
 #include "pooleg.h"
 
@@ -60,7 +61,6 @@ public:
 
         FullQueueFlag.store(nextFlag, std::memory_order_release);
         
-        printf("cur waiting threads: %d,threadLock :%d\n",tnum.load(),nextFlag);
         while(SetAttrLock.is_locked()){
             std::this_thread::yield();
         }
@@ -100,6 +100,8 @@ public:
 
 plswitcher *switcher;
 spin_lock releaseThread;
+spin_lock reportLock;
+std::map<size_t,int> addrReport;
 
 void testHandler(){
      while(releaseThread.is_locked()){
@@ -113,6 +115,13 @@ void testHandler(){
     }
     int __handleTime = rand()%9999 + 1;
     std::this_thread::sleep_for(std::chrono::milliseconds(__handleTime));
+    {
+        std::lock_guard<spin_lock> repo(reportLock);
+        if(!addrReport[(size_t)testmem]){
+            addrReport[(size_t)testmem] = 0;           
+        }
+        addrReport[(size_t)testmem]++;
+    }
     switcher->free(testmem);
 }
 
@@ -127,7 +136,14 @@ int main(){
         workers.emplace_back(testHandler);
 
     releaseThread.unlock();
-    for(auto &t : workers) t.join();    
+    for(auto &t : workers) t.join();   
+
+    size_t TotalCalls = 0;
+    for(auto &i : addrReport){
+        TotalCalls+=i.second;
+    }
+
+    printf("Total allocatins :%lu\n",TotalCalls);
 
     return 0;
 }
