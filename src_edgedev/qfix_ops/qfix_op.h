@@ -13,6 +13,10 @@
 extern "C"{
 #endif
 
+inline qfix qfmin(qfix num1, qfix num2);
+
+inline qfix qfmax(qfix num1, qfix num2);
+
 //运算
 qfix qfix_add(qfix num1,qfix num2);
 

@@ -1,5 +1,14 @@
 #include "qfix_op.h"
 
+inline qfix qfmin(qfix num1, qfix num2){
+    return num1 < num2? num1: num2;
+}
+
+inline qfix qfmax(qfix num1, qfix num2){
+    return num1 > num2? num1: num2;
+}
+
+
 qfix qfix_add(qfix num1, qfix num2){
     return num1 + num2;
 }

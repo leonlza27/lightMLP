@@ -13,7 +13,7 @@ typedef qfix bp;
 typedef struct matrix_bp_data{
     bp *data;//行优先展开
     uint16_t rows/*行数*/,cols/*列数*/;
-}matrix_bp_data,*p_matrix_bp, *p_matrix_qfix;
+}matrix_bp_data,*matrix_bp, *matrix_qfix;
 
 #define alloc_matrix_bp() (matrix_bp_data*)malloc(sizeof(matrix_bp_data))
 

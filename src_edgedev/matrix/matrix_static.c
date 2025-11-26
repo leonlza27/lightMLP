@@ -1,9 +1,5 @@
 #include "matrix_static.h"
 
-static inline uint16_t min(uint16_t num1, uint16_t num2){
-    return num1 < num2? num1: num2;
-}
-
 matrix_bp_data *new_matrix_bp(){
     matrix_bp_data* ret = alloc_matrix_bp();
     ret->data = 0;
@@ -96,9 +92,9 @@ void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, 
         for(uint16_t j_blk = 0; j_blk < out_cols; j_blk += BLOCK_SIZE){
             for(uint16_t k_blk = 0; k_blk < _k; k_blk += BLOCK_SIZE){
             
-                uint16_t i_in_max = min(out_rows - i_blk, BLOCK_SIZE);
-                uint16_t j_in_max = min(out_cols - j_blk, BLOCK_SIZE);
-                uint16_t k_in_max = min(_k - k_blk, BLOCK_SIZE);
+                uint16_t i_in_max = qfmin(out_rows - i_blk, BLOCK_SIZE);
+                uint16_t j_in_max = qfmin(out_cols - j_blk, BLOCK_SIZE);
+                uint16_t k_in_max = qfmin(_k - k_blk, BLOCK_SIZE);
                 
                 /*
                 qfix *A_tiled_buf = A_tiled_start + i * _k + k_blk;
