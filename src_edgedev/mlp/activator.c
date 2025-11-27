@@ -71,7 +71,7 @@ void Sigmoid(const matrix_qfix input, matrix_qfix output){
     qfix* out = output->data;
     
     for(uint32_t i = 0; i < size; i++){
-        out[i] = qfix_div(one, Q_ONE + exp_qfix(-in[i]));
+        out[i] = qfix_div(Q_ONE, Q_ONE + exp_qfix(-in[i]));
     }
 }
 
@@ -113,4 +113,3 @@ void Softmax(const matrix_qfix input, matrix_qfix output){
         out[i] = qfix_div(elem_exp[i], elem_exp_sum);
     }
 }
-

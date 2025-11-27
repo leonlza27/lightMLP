@@ -16,17 +16,17 @@ enum ACT_TYPE{
     type_LeakyReLU
 };
 
-void ReLU(const matrix_bp input,matrix_bp output);
-void ReLU6(const matrix_bp input,matrix_bp output);
-void LeakyReLU(const matrix_bp input,matrix_bp output, qfix alpha);
-void Sigmoid_Hard(const matrix_bp input,matrix_bp output);
-void Tanh_Hard(const matrix_bp input,matrix_bp output);
+inline void ReLU(const matrix_qfix input,matrix_qfix output);
+inline void ReLU6(const matrix_qfix input,matrix_qfix output);
+inline void LeakyReLU(const matrix_qfix input,matrix_qfix output, qfix alpha);
+inline void Sigmoid_Hard(const matrix_qfix input,matrix_qfix output);
+inline void Tanh_Hard(const matrix_qfix input,matrix_qfix output);
 
-void Sigmoid(const matrix_bp input,matrix_bp output);
-void Tanh(const matrix_bp input,matrix_bp output);
+inline void Sigmoid(const matrix_qfix input,matrix_qfix output);
+inline void Tanh(const matrix_qfix input,matrix_qfix output);
 
-void Sign(const matrix_bp input,matrix_bp output);
-void Softmax(const matrix_bp input,matrix_bp output);
+inline void Sign(const matrix_qfix input,matrix_qfix output);
+inline void Softmax(const matrix_qfix input,matrix_qfix output);
 
 
 #endif
