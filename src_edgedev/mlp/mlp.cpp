@@ -34,9 +34,8 @@ void mlp_calclyr::fwdCalc(const matrix_bp input, matrix_bp output){
 
 mlpNetRef::mlpNetRef(uint16_t lyrnum,NetLyrAllocator *netstruct){
     NetLyrs = (mlp_calclyr*)malloc(sizeof(mlp_calclyr) * lyrnum);
-    fullConnData = (matrix_bp_data*)malloc(sizeof(matrix_bp_data) * lyrnum);
+    fullConnDataMid = (matrix_bp_data*)malloc(sizeof(matrix_bp_data) * 3);
     for(uint16_t i = 0; i < lyrnum; i++){
-        matrix_bp_init(fullConnData + i, 1, netstruct[i].outputs, 0);
         NetLyrs[i].confLyr(netstruct[i]);
     }
     
@@ -44,6 +43,9 @@ mlpNetRef::mlpNetRef(uint16_t lyrnum,NetLyrAllocator *netstruct){
 }
 
 void mlpNetRef::infer(matrix_bp input){
-    
+    for(uint16_t i = 0; i < netLyrCount; i++){
+
+        //NetLyrs[i].fwdCalc()
+    }    
 
 }

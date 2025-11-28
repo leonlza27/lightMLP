@@ -3,6 +3,7 @@
 #define _matrix_static_
 
 #include "../CustomConf.h"
+#include "../qfix_ops/qfix_op.h"
 #include <stdio.h>
 #include <malloc.h>
 

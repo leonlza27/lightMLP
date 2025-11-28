@@ -29,7 +29,7 @@ public:
 
 class mlpNetRef{
 private:
-    matrix_bp_data *fullConnData;      //全连接层([<last>]:网络输出)
+    matrix_bp_data *fullConnDataMid;      //全连接层([2]:网络输出)
     mlp_calclyr *NetLyrs;
     uint16_t netLyrCount;
 public:
