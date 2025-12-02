@@ -101,4 +101,7 @@ static const f_q16_16 exp_lut_q16[256] = {
 };
 #endif
 
+//不同位宽指针长度定义
+#define _PTRLEN sizeof(void*)
+
 #endif

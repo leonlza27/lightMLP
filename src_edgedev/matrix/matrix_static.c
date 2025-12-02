@@ -1,60 +1,10 @@
 #include "matrix_static.h"
 
-matrix_bp_data *new_matrix_bp(){
-    matrix_bp_data* ret = alloc_matrix_bp();
-    ret->data = 0;
-    ret->cols = 0;
-    ret->rows = 0;
-    return ret;
-}
-
-void matrix_bp_init(matrix_bp_data *matrix, uint16_t m, uint16_t n, bp *data){
-    matrix->cols = n;
-    matrix->rows = m;
-    
-    matrix->data = (bp*)malloc(m * n * sizeof(bp));
-    
-    if(data == 0) {
-        for(uint32_t i = 0; i < m*n; i++) {
-            matrix->data[i] = 0;
-        }
-        return;
-    }
-    for(uint32_t i = 0; i < m*n; i++) {
-        matrix->data[i] = data[i];
-    }
-
-}
-
-
-void matrix_bp_set(matrix_bp_data *matrix, uint16_t m, uint16_t n, bp *data) {    
-    if(matrix->data == NULL) {
-        matrix->data = (bp*)malloc(m * n * sizeof(bp));
-    }else if(m * n != matrix->cols * matrix->rows){
-        free(matrix->data);
-        matrix->data = (bp*)malloc(m * n * sizeof(bp));
-    }
-    
-    if(matrix->data == NULL) return;
-    
-    matrix->cols = n;
-    matrix->rows = m;
-    
-    if(data == 0) {
-        for(uint32_t i = 0; i < m*n; i++) {
-            matrix->data[i] = 0;
-        }
-        return;
-    }
-    for(uint32_t i = 0; i < m*n; i++) {
-        matrix->data[i] = data[i];
-    }
-}
 
 void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu) {
     resu->cols = madd1->cols;
     resu->rows = madd1->rows;
-    register uint32_t size = madd1->cols * madd1->rows;
+    uint32_t size = madd1->cols * madd1->rows;
     
     bp *in1_base = madd1->data;
     bp *in2_base = madd2->data;
@@ -66,63 +16,78 @@ void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, mat
 }
 
 void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu) {
-    resu->cols = mmul2->cols;
-    resu->rows = mmul1->rows;
     const uint16_t _k = mmul1->cols,
                     out_rows = mmul1->rows,
                     out_cols = mmul2->cols;
+    
+    resu->cols = out_cols;
+    resu->rows = out_rows;
     
     //matrix_qf.data地址源
     bp *in1_base = mmul1->data,
            *in2_base = mmul2->data,
            *out_base = resu->data;
         
-    /*
-    qfix *A_tiled_start = in1_base + i_blk * _k;
-    qfix *C_tiled_start = out_base + i_blk * out_cols;
-    */
-    
-    const uint16_t A_blkrow_offset = BLOCK_SIZE * _k;
-    const uint16_t C_blkrow_offset = BLOCK_SIZE * out_cols;
-    
-    qfix *A_tiled_start = in1_base;
-    qfix *C_tiled_start = out_base;
-    
-    for(uint16_t i_blk = 0; i_blk < out_rows; i_blk += BLOCK_SIZE){
-        for(uint16_t j_blk = 0; j_blk < out_cols; j_blk += BLOCK_SIZE){
-            for(uint16_t k_blk = 0; k_blk < _k; k_blk += BLOCK_SIZE){
+    for(uint16_t i = 0; i < out_rows; i += 2){
+        for(uint16_t j = 0; j < out_cols; j += 2){
+            _tmp_larger sum00 = 0, sum01 = 0, sum10 = 0, sum11 = 0;
             
-                uint16_t i_in_max = qfmin(out_rows - i_blk, BLOCK_SIZE);
-                uint16_t j_in_max = qfmin(out_cols - j_blk, BLOCK_SIZE);
-                uint16_t k_in_max = qfmin(_k - k_blk, BLOCK_SIZE);
+            uint16_t k;
+            // 内层循环4路unroll
+            for(k = 0; k + 3 < _k; k += 4){
+                // 第一行
+                bp a0_0 = in1_base[i * _k + k];
+                bp a0_1 = in1_base[i * _k + k+1];
+                bp a0_2 = in1_base[i * _k + k+2];
+                bp a0_3 = in1_base[i * _k + k+3];
                 
-                /*
-                qfix *A_tiled_buf = A_tiled_start + i * _k + k_blk;
-                qfix *C_tiled_buf = C_tiled_start + i * out_cols + j_blk;
-                */
+                // 第二行（如果存在）
+                bp a1_0 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k] : 0;
+                bp a1_1 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k+1] : 0;
+                bp a1_2 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k+2] : 0;
+                bp a1_3 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k+3] : 0;
                 
-                qfix *A_tiled_buf_0 = A_tiled_start + k_blk;
-                qfix *C_tiled_buf_0 = C_tiled_start + j_blk;
-            
-                for(uint16_t i = 0; i < i_in_max; i++){
-               
-                    for(uint16_t j = 0; j < j_in_max; j++){
-                    
-                        _tmp_larger sum = 0;
-                        for(uint16_t k = 0; k < k_in_max; k++){
-                            sum += ((_tmp_larger)A_tiled_buf_0[k] * (_tmp_larger)in2_base[(k_blk + k) * out_cols + (j_blk + j)]);
-                        }
-                        C_tiled_buf_0[j] = (bp)(sum + (1LL << (QSHIFT -1))) >> QSHIFT;
-                    }
-                    
-                    A_tiled_buf_0 += _k;
-                    C_tiled_buf_0 += out_cols;
+                // B矩阵的列
+                bp b0_0 = in2_base[k * out_cols + j];
+                bp b0_1 = (j+1 < out_cols) ? in2_base[k * out_cols + j+1] : 0;
+                bp b1_0 = in2_base[(k+1) * out_cols + j];
+                bp b1_1 = (j+1 < out_cols) ? in2_base[(k+1) * out_cols + j+1] : 0;
+                bp b2_0 = in2_base[(k+2) * out_cols + j];
+                bp b2_1 = (j+1 < out_cols) ? in2_base[(k+2) * out_cols + j+1] : 0;
+                bp b3_0 = in2_base[(k+3) * out_cols + j];
+                bp b3_1 = (j+1 < out_cols) ? in2_base[(k+3) * out_cols + j+1] : 0;
+                
+                sum00 += a0_0 * b0_0 + a0_1 * b1_0 + a0_2 * b2_0 + a0_3 * b3_0;
+                if(j+1 < out_cols) sum01 += a0_0 * b0_1 + a0_1 * b1_1 + a0_2 * b2_1 + a0_3 * b3_1;
+                
+                if(i+1 < out_rows) {
+                    sum10 += a1_0 * b0_0 + a1_1 * b1_0 + a1_2 * b2_0 + a1_3 * b3_0;
+                    if(j+1 < out_cols) sum11 += a1_0 * b0_1 + a1_1 * b1_1 + a1_2 * b2_1 + a1_3 * b3_1;
                 }
+            }
+            
+            // 处理剩余k
+            for(; k < _k; k++){
+                bp a0 = in1_base[i * _k + k];
+                bp a1 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k] : 0;
+                bp b0 = in2_base[k * out_cols + j];
+                bp b1 = (j+1 < out_cols) ? in2_base[k * out_cols + j+1] : 0;
+                
+                sum00 += a0 * b0;
+                if(j+1 < out_cols) sum01 += a0 * b1;
+                if(i+1 < out_rows) sum10 += a1 * b0;
+                if(i+1 < out_rows && j+1 < out_cols) sum11 += a1 * b1;
+            }
+            
+            // 存储结果
+            out_base[i * out_cols + j] = (bp)(sum00 + (1LL << (QSHIFT -1))) >> QSHIFT;
+            if(j+1 < out_cols) out_base[i * out_cols + j+1] = (bp)(sum01 + (1LL << (QSHIFT -1))) >> QSHIFT;
+            if(i+1 < out_rows) {
+                out_base[(i+1) * out_cols + j] = (bp)(sum10 + (1LL << (QSHIFT -1))) >> QSHIFT;
+                if(j+1 < out_cols) out_base[(i+1) * out_cols + j+1] = (bp)(sum11 + (1LL << (QSHIFT -1))) >> QSHIFT;
             }
         }
         
-        A_tiled_start += A_blkrow_offset;
-        C_tiled_start += C_blkrow_offset;
     }
     
 }
@@ -149,11 +114,6 @@ void matrix_bp_mulpty_raw(const matrix_bp_data *mmul1, const matrix_bp_data *mmu
             out_base[i * out_cols + j] = (bp)(sum + (1LL << (QSHIFT -1))) >> QSHIFT;
         }
     }
-}
-
-void quickcheck_mmul(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *rawresu, matrix_bp_data *actualresu){
-    matrix_bp_mulpty_raw(mmul1, mmul2, rawresu);
-    matrix_bp_mulpty(mmul1, mmul2, actualresu);
 }
 
 #endif

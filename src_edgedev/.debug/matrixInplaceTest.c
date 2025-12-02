@@ -1,38 +1,62 @@
 #include <stdio.h>
 #include "../matrix/matrix_static.h"
 #include "../qfix_ops/qfix_op.h"
+#include <stdlib.h>
+#include <time.h>
 
 int main(){
-    matrix_bp m1 = new_matrix_bp();
-    matrix_bp m2 = new_matrix_bp();
-    matrix_bp m3 = new_matrix_bp();
+    matrix_bp m1;
+    matrix_bp m2;
+    matrix_bp m3;
+    matrix_bp mr;
 
-    qfix cap1[] = {float_to_qfix(1.0f),float_to_qfix(2.0f),float_to_qfix(1.0f),float_to_qfix(2.0f)};
-    qfix cap2[] = {float_to_qfix(1.0f),float_to_qfix(2.0f),float_to_qfix(1.0f),float_to_qfix(2.0f)};
-    qfix cap3[4] = {};
+    int m = 2, k = 28, n = 4;
 
-    m1->cols = 2;
-    m1->rows = 2;
-    m1->data = cap1;
+    srand(time(0));
 
-    m2->cols = 2;
-    m2->rows = 2;
-    m2->data = cap2;
+    qfix cap1[64] = {};
+    qfix cap2[64] = {};
+    qfix cap3[64] = {};
+    qfix capr[64] = {};
 
-    m3->cols = 2;
-    m3->rows = 2;
-    m3->data = cap3;
+    for(int i = 0; i < 64; i++) cap1[i] = rand() % 2 >> 17;
+    for(int i = 0; i < 64; i++) cap2[i] = rand() % 2 >> 17;
 
+    m1 = (matrix_bp)cap1;
+    m1->cols = k;
+    m1->rows = m;
+
+    m2 = (matrix_bp)cap2;
+    m2->cols = n;
+    m2->rows = k;
+
+    m3 = (matrix_bp)cap3;
+    m3->cols = n;
+    m3->rows = m;
+    
+    mr = (matrix_bp)capr;
+    mr->cols = n;
+    mr->rows = m;
+    
+    matrix_bp_mulpty_raw(m1, m2, mr);
     matrix_bp_mulpty(m1, m2, m3);
     matrix_bp_mulpty(m1, m2, m1);
 
-    int is_eq = 1;
-    for (int i = 0; i < 2; i++){
+    int is_eqi = 1;
+    for (int i = 0; i < m * n; i++){
         if(m1->data[i] != m3->data[i]){
-            is_eq = 0;
+            is_eqi = 0;
+            break;
+        }
+    }
+    
+    int is_eqr = 1;
+    for (int i = 0; i < m * n; i++){
+        if(m3->data[i] != mr->data[i]){
+            is_eqr = 0;
             break;
         }
     }
 
-    printf("%d\n", is_eq);
+    printf("verify resu:%d inplace:%d\n", is_eqr, is_eqi);
 }

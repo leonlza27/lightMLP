@@ -6,36 +6,32 @@
 #include "activator.h"
 #include <stdint.h>
 
-typedef struct _netLyrAllocator{
-    qfix *existedWeightData;      //已有权重数据
-    qfix *existedBiasData;        //已有偏置数据
-    uint16_t inputs;                //层输入
-    uint16_t outputs;               //层输出
-    unsigned char Activetype;       //层激活类型
+#pragma pack(1)
+typedef struct _netLyrConf{
+    uint8_t Activetype;       //层激活类型
     qfix dataExtra;         
-}NetLyrAllocator;
-
-class mlp_calclyr{
-private:
-    matrix_bp tmp;        //激活前数据存储(防止运算动态分配)
-    matrix_bp weights,bias;
-    unsigned char ActiveType;   //激活类型
-    qfix _alpha;
-
-public:
-    void confLyr(NetLyrAllocator lyrConf);
-    void fwdCalc(const matrix_bp input, matrix_bp output);
-};
+    matrix_bp existedWeightData;      //已有权重数据(matrix inLen * outLen)
+    matrix_bp existedBiasData;        //已有偏置数据(matrix 1 * outLen)
+}NetLyrConf;
+#pragma pack(pop)
 
 class mlpNetRef{
 private:
-    matrix_bp_data *fullConnDataMid;      //全连接层([2]:网络输出)
-    mlp_calclyr *NetLyrs;
+    matrix_bp fullConnDataMid;      //全连接层
+    NetLyrConf *lyrData;
     uint16_t netLyrCount;
+
 public:
-    mlpNetRef(uint16_t lyrnum,NetLyrAllocator *netstruct);
+    void init(uint16_t lyrnum,NetLyrConf *netstruct);
     void infer(matrix_bp input);
-    void getOutput(matrix_bp output);
+
+    inline void resu_refAddr(matrix_bp output){output = fullConnDataMid;};
+    inline void resu_copyied(matrix_bp output){
+        uint16_t ElemSize = fullConnDataMid->cols * fullConnDataMid->rows;
+        qfix *outDim = output->data;
+        qfix *sourceDim = fullConnDataMid->data;
+        for(uint16_t i = 0; i < ElemSize; i++) outDim[i] = sourceDim[i];
+    };
 };
 
 #endif
