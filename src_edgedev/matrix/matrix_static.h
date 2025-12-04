@@ -9,7 +9,7 @@
 
 typedef qfix bp;
 
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 4
 
 #pragma pack(4)
 typedef struct matrix_bp_data{
@@ -25,6 +25,8 @@ extern "C" {
 void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu);
 
 void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
+
+void matrix_bp_mulpty_optimized(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
 
 #ifdef ON_DBG
 

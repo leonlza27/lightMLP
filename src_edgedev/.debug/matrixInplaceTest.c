@@ -4,6 +4,20 @@
 #include <stdlib.h>
 #include <time.h>
 
+// Linux/macOS: 纳秒级精度
+uint64_t get_time_ns() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+}
+
+// 或者使用CLOCK_MONOTONIC_RAW（不受NTP调整影响）
+uint64_t get_time_ns_raw() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+}
+
 int main(){
     matrix_bp m1;
     matrix_bp m2;
@@ -37,26 +51,20 @@ int main(){
     mr = (matrix_bp)capr;
     mr->cols = n;
     mr->rows = m;
-    
+
+    uint64_t start = get_time_ns();
+    matrix_bp_mulpty_optimized(m1, m2, m3);
+    uint64_t end = get_time_ns();
+
+    printf("opt %d\n", end - start);
+
+    start = get_time_ns();
     matrix_bp_mulpty_raw(m1, m2, mr);
-    matrix_bp_mulpty(m1, m2, m3);
-    matrix_bp_mulpty(m1, m2, m1);
+    end = get_time_ns();
 
-    int is_eqi = 1;
-    for (int i = 0; i < m * n; i++){
-        if(m1->data[i] != m3->data[i]){
-            is_eqi = 0;
-            break;
-        }
-    }
+    printf("raw %d\n", end - start);
     
-    int is_eqr = 1;
-    for (int i = 0; i < m * n; i++){
-        if(m3->data[i] != mr->data[i]){
-            is_eqr = 0;
-            break;
-        }
+    for(uint16_t i = 0; i < m * n; i++){
+        if(m3->data[i] != mr->data[i]) return 1;
     }
-
-    printf("verify resu:%d inplace:%d\n", is_eqr, is_eqi);
 }

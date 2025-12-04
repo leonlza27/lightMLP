@@ -5,15 +5,15 @@ static inline void fwdCalc(const matrix_bp weights, const matrix_bp bias, const 
     matrix_bp_add(output, bias, output);
 
     switch(ActiveType){
-        case type_ReLU: ReLU(output, output); break;
-        case type_ReLU6: ReLU6(output, output); break;
-        case type_LeakyReLU: LeakyReLU(output, output, _alpha); break;
-        case type_Sigmoid: Sigmoid(output, output); break;
+        case type_ReLU:         ReLU(output, output); break;
+        case type_ReLU6:        ReLU6(output, output); break;
+        case type_LeakyReLU:    LeakyReLU(output, output, _alpha); break;
+        case type_Sigmoid:      Sigmoid(output, output); break;
         case type_Sigmoid_hard: Sigmoid_Hard(output, output); break;
-        case type_Tanh: Tanh(output, output); break;
-        case type_Tanh_hard: Tanh_Hard(output, output); break;
-        case type_Sign: Sign(output, output); break;
-        case type_Softmax: Softmax(output, output); break;
+        case type_Tanh:         Tanh(output, output); break;
+        case type_Tanh_hard:    Tanh_Hard(output, output); break;
+        case type_Sign:         Sign(output, output); break;
+        case type_Softmax:      Softmax(output, output); break;
         default: break;
     }
 }

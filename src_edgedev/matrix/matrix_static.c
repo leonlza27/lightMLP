@@ -16,82 +16,78 @@ void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, mat
 }
 
 void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu) {
-    const uint16_t _k = mmul1->cols,
-                    out_rows = mmul1->rows,
-                    out_cols = mmul2->cols;
-    
-    resu->cols = out_cols;
-    resu->rows = out_rows;
-    
-    //matrix_qf.data地址源
-    bp *in1_base = mmul1->data,
-           *in2_base = mmul2->data,
-           *out_base = resu->data;
         
-    for(uint16_t i = 0; i < out_rows; i += 2){
-        for(uint16_t j = 0; j < out_cols; j += 2){
-            _tmp_larger sum00 = 0, sum01 = 0, sum10 = 0, sum11 = 0;
+    const uint16_t k = mmul1->cols;
+    const uint16_t m = mmul1->rows;
+    const uint16_t n = mmul2->cols;
+    
+    resu->rows = m;
+    resu->cols = n;
+    
+    bp *a = mmul1->data;
+    bp *b = mmul2->data;
+    bp *c = resu->data;
+    
+    // 关键优化：预计算偏移，减少乘法运算
+    for(uint16_t i = 0; i < m; i++){
+        // 预计算A的行偏移
+        uint32_t a_row_offset = i * k;
+        
+        for(uint16_t j = 0; j < n; j++){
+            _tmp_larger sum = 0;
             
-            uint16_t k;
-            // 内层循环4路unroll
-            for(k = 0; k + 3 < _k; k += 4){
-                // 第一行
-                bp a0_0 = in1_base[i * _k + k];
-                bp a0_1 = in1_base[i * _k + k+1];
-                bp a0_2 = in1_base[i * _k + k+2];
-                bp a0_3 = in1_base[i * _k + k+3];
-                
-                // 第二行（如果存在）
-                bp a1_0 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k] : 0;
-                bp a1_1 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k+1] : 0;
-                bp a1_2 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k+2] : 0;
-                bp a1_3 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k+3] : 0;
-                
-                // B矩阵的列
-                bp b0_0 = in2_base[k * out_cols + j];
-                bp b0_1 = (j+1 < out_cols) ? in2_base[k * out_cols + j+1] : 0;
-                bp b1_0 = in2_base[(k+1) * out_cols + j];
-                bp b1_1 = (j+1 < out_cols) ? in2_base[(k+1) * out_cols + j+1] : 0;
-                bp b2_0 = in2_base[(k+2) * out_cols + j];
-                bp b2_1 = (j+1 < out_cols) ? in2_base[(k+2) * out_cols + j+1] : 0;
-                bp b3_0 = in2_base[(k+3) * out_cols + j];
-                bp b3_1 = (j+1 < out_cols) ? in2_base[(k+3) * out_cols + j+1] : 0;
-                
-                sum00 += a0_0 * b0_0 + a0_1 * b1_0 + a0_2 * b2_0 + a0_3 * b3_0;
-                if(j+1 < out_cols) sum01 += a0_0 * b0_1 + a0_1 * b1_1 + a0_2 * b2_1 + a0_3 * b3_1;
-                
-                if(i+1 < out_rows) {
-                    sum10 += a1_0 * b0_0 + a1_1 * b1_0 + a1_2 * b2_0 + a1_3 * b3_0;
-                    if(j+1 < out_cols) sum11 += a1_0 * b0_1 + a1_1 * b1_1 + a1_2 * b2_1 + a1_3 * b3_1;
-                }
+            // 内循环使用指针运算
+            bp *a_ptr = &a[a_row_offset];
+            bp *b_ptr = &b[j];  // B的第j列起始位置
+            
+            for(uint16_t kk = 0; kk < k; kk++){
+                sum += ((_tmp_larger)(*a_ptr) * (*b_ptr));
+                a_ptr++;
+                b_ptr += n;  // 跳到B的下一行（列优先访问）
             }
             
-            // 处理剩余k
-            for(; k < _k; k++){
-                bp a0 = in1_base[i * _k + k];
-                bp a1 = (i+1 < out_rows) ? in1_base[(i+1) * _k + k] : 0;
-                bp b0 = in2_base[k * out_cols + j];
-                bp b1 = (j+1 < out_cols) ? in2_base[k * out_cols + j+1] : 0;
-                
-                sum00 += a0 * b0;
-                if(j+1 < out_cols) sum01 += a0 * b1;
-                if(i+1 < out_rows) sum10 += a1 * b0;
-                if(i+1 < out_rows && j+1 < out_cols) sum11 += a1 * b1;
-            }
-            
-            // 存储结果
-            out_base[i * out_cols + j] = (bp)(sum00 + (1LL << (QSHIFT -1))) >> QSHIFT;
-            if(j+1 < out_cols) out_base[i * out_cols + j+1] = (bp)(sum01 + (1LL << (QSHIFT -1))) >> QSHIFT;
-            if(i+1 < out_rows) {
-                out_base[(i+1) * out_cols + j] = (bp)(sum10 + (1LL << (QSHIFT -1))) >> QSHIFT;
-                if(j+1 < out_cols) out_base[(i+1) * out_cols + j+1] = (bp)(sum11 + (1LL << (QSHIFT -1))) >> QSHIFT;
-            }
+            c[i * n + j] = (bp)((sum + (1LL << (QSHIFT - 1))) >> QSHIFT);
         }
-        
-    }
-    
+    }    
 }
 
+// 优化版本1：使用局部变量和指针运算
+void matrix_bp_mulpty_optimized(const matrix_bp_data *A, 
+                          const matrix_bp_data *B, 
+                          matrix_bp_data *C) {
+    const uint16_t k = A->cols;
+    const uint16_t m = A->rows;
+    const uint16_t n = B->cols;
+    
+    C->rows = m;
+    C->cols = n;
+    
+    bp *a = A->data;
+    bp *b = B->data;
+    bp *c = C->data;
+    
+    // 关键优化：预计算偏移，减少乘法运算
+    for(uint16_t i = 0; i < m; i++){
+        // 预计算A的行偏移
+        uint32_t a_row_offset = i * k;
+        
+        for(uint16_t j = 0; j < n; j++){
+            _tmp_larger sum = 0;
+            
+            // 内循环使用指针运算
+            bp *a_ptr = &a[a_row_offset];
+            bp *b_ptr = &b[j];  // B的第j列起始位置
+            
+            for(uint16_t kk = 0; kk < k; kk++){
+                sum += ((_tmp_larger)(*a_ptr) * (*b_ptr));
+                a_ptr++;
+                b_ptr += n;  // 跳到B的下一行（列优先访问）
+            }
+            
+            c[i * n + j] = (bp)((sum + (1LL << (QSHIFT - 1))) >> QSHIFT);
+        }
+    }
+}
 #ifdef ON_DBG
 
 void matrix_bp_mulpty_raw(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu) {

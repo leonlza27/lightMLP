@@ -1,21 +1,5 @@
 #include "qfix_op.h"
 
-qfix qfix_add(qfix num1, qfix num2){
-    return num1 + num2;
-}
-
-qfix qfix_sub(qfix num1, qfix num2){
-    return num1 - num2;
-}
-
-qfix qfix_mul(qfix num1, qfix num2){
-    return (qfix)(((_tmp_larger)num1 * num2) >> QSHIFT);
-}
-
-qfix qfix_div(qfix num1, qfix num2){
-    return (qfix)(((_tmp_larger)num1 << QSHIFT) / num2);
-}
-
 qfix exp_qfix(qfix x){
     if(x > 8 << QSHIFT) return QF_MAX;
     if(x < -8 << QSHIFT) return 0;

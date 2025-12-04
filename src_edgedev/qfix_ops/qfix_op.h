@@ -22,13 +22,21 @@ static inline qfix qfmax(qfix num1, qfix num2){
 }
 
 //运算
-qfix qfix_add(qfix num1,qfix num2);
+static inline qfix qfix_add(qfix num1, qfix num2){
+    return num1 + num2;
+}
 
-qfix qfix_sub(qfix num1,qfix num2);
+static inline qfix qfix_sub(qfix num1, qfix num2){
+    return num1 - num2;
+}
 
-qfix qfix_mul(qfix num1,qfix num2);
+static inline qfix qfix_mul(qfix num1, qfix num2){
+    return (qfix)(((_tmp_larger)num1 * num2) >> QSHIFT);
+}
 
-qfix qfix_div(qfix num1,qfix num2);
+static inline qfix qfix_div(qfix num1, qfix num2){
+    return (qfix)(((_tmp_larger)num1 << QSHIFT) / num2);
+}
 
 qfix exp_qfix(qfix x);
 
