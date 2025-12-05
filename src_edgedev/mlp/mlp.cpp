@@ -43,11 +43,14 @@ void mlpNetRef::infer(matrix_bp input){
 
     fwdCalc(weights, bias, acTp, alpha, input, fullConnDataMid);
 
+    char *curAddr = 0;
+
     for(uint16_t i = 1; i < netLyrCount; i++){
-        alpha = *(qfix*)((char*)(lyrData + i) + sizeof(uint8_t));
-        acTp = *(uint8_t*)(lyrData + i);
-        weights = *(matrix_bp*)((char*)(lyrData + i) + sizeof(uint8_t) + sizeof(qfix));
-        bias = *(matrix_bp*)((char*)(lyrData + i) + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
+        curAddr = (char*)(lyrData + i);
+        alpha = *(qfix*)(curAddr + sizeof(uint8_t));
+        acTp = *(uint8_t*)curAddr;
+        weights = *(matrix_bp*)(curAddr + sizeof(uint8_t) + sizeof(qfix));
+        bias = *(matrix_bp*)(curAddr + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
 
         fwdCalc(weights, bias, acTp, alpha, fullConnDataMid, fullConnDataMid);
     }    
