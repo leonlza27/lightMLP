@@ -1,8 +1,9 @@
-#ifndef _matrix_static
-#define _matrix_static
+#ifndef _matrix_gern
+#define _matrix_gern
 
 #include <stdint.h>
 #include "../qfix_ops/qfix_op.h"
+#include "../tools/mult_proc.h"
 
 typedef qfix bp;
 
@@ -12,16 +13,8 @@ typedef struct matrix_bp_data{
     bp data[];//行优先展开
 }matrix_bp_data,*matrix_bp, *matrix_qfix;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu);
 
 void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

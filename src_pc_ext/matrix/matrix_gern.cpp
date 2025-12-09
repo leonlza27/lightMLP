@@ -1,27 +1,27 @@
-#include "matrix_static.h"
-
+#include "matrix_gern.h"
 
 void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu) {
     resu->cols = madd1->cols;
     resu->rows = madd1->rows;
     uint32_t size = madd1->cols * madd1->rows;
     
-    bp *in1_base = madd1->data;
-    bp *in2_base = madd2->data;
+    bp *in1_base = (bp*)madd1->data;
+    bp *in2_base = (bp*)madd2->data;
     bp *out_base = resu->data;
-    
-    uint16_t i = 0;
+    multi_process(size,[=]wrapper_custom_start_end{
+    uint16_t i = start;
 
-    for(; i < size; i+=4){
+    for(; i < end; i+=4){
         out_base[i] = in1_base[i] + in2_base[i];
         out_base[i + 1] = in1_base[i + 1] + in2_base[i + 1];
         out_base[i + 2] = in1_base[i + 2] + in2_base[i + 2];
         out_base[i + 3] = in1_base[i + 3] + in2_base[i + 3];
     }
 
-    for(; i < size; i++){
+    for(; i < end; i++){
         out_base[i] = in1_base[i] + in2_base[i];
     }
+    });
 }
 
 void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu) {
@@ -33,12 +33,14 @@ void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, 
     resu->rows = m;
     resu->cols = n;
     
-    bp *a = mmul1->data;
-    bp *b = mmul2->data;
+    bp *a = (bp*)mmul1->data;
+    bp *b = (bp*)mmul2->data;
     bp *c = resu->data;
     
     // 关键优化：预计算偏移，减少乘法运算
-    for(uint16_t i = 0; i < m; i++){
+
+    multi_process(m,[=]wrapper_custom_start_end{
+        for(uint16_t i = start; i < end; i++){
         // 预计算A的行偏移
         uint32_t a_row_offset = i * k;
         
@@ -58,4 +60,7 @@ void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, 
             c[i * n + j] = (bp)((sum + (1LL << (QSHIFT - 1))) >> QSHIFT);
         }
     }    
+    });
+
+
 }
