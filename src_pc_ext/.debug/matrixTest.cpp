@@ -1,9 +1,13 @@
 #include <stdlib.h>
 #include <time.h>
 #include "../matrix/matrix_gern.h"
-
-namespace verify{
-#include "../matrix/matrix_static.h"
+#include <stdio.h>
+#define time4(expr) {\
+   auto start = std::chrono::high_resolution_clock::now();\
+   expr;\
+   auto end = std::chrono::high_resolution_clock::now();\
+   auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);\
+   printf("elapsed time in chrono = %ld ns\n" , duration.count());\
 }
 
 int main(){
@@ -12,17 +16,13 @@ int main(){
     matrix_bp m3;
     matrix_bp mr;
 
-    int m = 2, k = 28, n = 4;
+    int m = 2000, k = 280, n = 40;
 
     srand(time(0));
 
-    qfix cap1[64] = {};
-    qfix cap2[64] = {};
-    qfix cap3[64] = {};
-    qfix capr[64] = {};
-
-    for(int i = 0; i < 64; i++) cap1[i] = rand() % 2 >> 17;
-    for(int i = 0; i < 64; i++) cap2[i] = rand() % 2 >> 17;
+    qfix *cap1 = (qfix*)malloc(sizeof(qfix) * m * k + sizeof(matrix_bp_data));
+    qfix *cap2 = (qfix*)malloc(sizeof(qfix) * k * n + sizeof(matrix_bp_data));
+    qfix *cap3 = (qfix*)malloc(sizeof(qfix) * m * n + sizeof(matrix_bp_data));
 
     m1 = (matrix_bp)cap1;
     m1->cols = k;
@@ -35,16 +35,7 @@ int main(){
     m3 = (matrix_bp)cap3;
     m3->cols = n;
     m3->rows = m;
-    
-    mr = (matrix_bp)capr;
-    mr->cols = n;
-    mr->rows = m;
 
-    verify::matrix_bp_mulpty((verify::matrix_bp)m1,(verify::matrix_bp)m2,(verify::matrix_bp)mr);
-    matrix_bp_mulpty(m1,m2,m3);
+    time4(matrix_bp_mulpty(m1,m2,m3));
 
-
-    for(int i = 0; i< m * n; i++){
-        if(m3->data[i] != mr->data[i]) return 1;
-    }
 }

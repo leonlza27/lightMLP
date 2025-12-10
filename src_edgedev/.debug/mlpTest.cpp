@@ -3,6 +3,7 @@
 #include <string.h>
 #include "../mlp/mlp.h"
 #include <chrono>
+#include <stdlib.h>
 
 #define time4(expr) {\
    auto start = std::chrono::high_resolution_clock::now();\

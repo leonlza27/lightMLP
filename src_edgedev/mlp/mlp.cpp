@@ -1,4 +1,5 @@
 #include "mlp.h"
+#include <stdlib.h>
 
 static inline void fwdCalc(const matrix_bp weights, const matrix_bp bias, const uint8_t ActiveType, const qfix _alpha  , const matrix_bp input, matrix_bp output){
     matrix_bp_mulpty(weights, input, output);
