@@ -9,7 +9,7 @@
 #define wrapper_custom_start_end (size_t start,size_t end)
 #define wrapper_inner_loop(vaname) for(size_t vaname = start;vaname < end;vaname++)
 
-#define BLOCK_SIZE 65536
+#define BLOCK_SIZE 512
 #define BIG_BLOCK_SIZE BLOCK_SIZE * 5
 
 template <typename SubFn>

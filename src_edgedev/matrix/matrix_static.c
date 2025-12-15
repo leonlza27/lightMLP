@@ -38,9 +38,11 @@ void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, 
     bp *c = resu->data;
     
     // 关键优化：预计算偏移，减少乘法运算
+
+    // 预计算A的行偏移
+    uint32_t a_row_offset = 0;
     for(uint16_t i = 0; i < m; i++){
-        // 预计算A的行偏移
-        uint32_t a_row_offset = i * k;
+
         
         for(uint16_t j = 0; j < n; j++){
             _tmp_larger sum = 0;
@@ -57,5 +59,32 @@ void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, 
             
             c[i * n + j] = (bp)((sum + (1LL << (QSHIFT - 1))) >> QSHIFT);
         }
-    }    
+
+        a_row_offset += k;
+    }   
+
+}
+
+void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest){
+    bp *src = (bp*)source->data;
+    bp *dst = dest->data;
+
+    const uint16_t m = source->rows;
+    const uint16_t n = source->cols;
+
+    dest->cols = m;
+    dest->rows = n;
+
+    uint8_t isInplace = (source == dest);
+
+    for(uint16_t i = 0; i < m; i++){
+        bp *start0 = src + i * n;
+        bp *destBlock0 = dst + i;
+
+        for(uint16_t j = 0; j < n; j++){
+            *destBlock0 = *start0;
+            start0++;
+            destBlock0 += m;
+        }
+    }
 }

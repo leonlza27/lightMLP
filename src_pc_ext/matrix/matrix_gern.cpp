@@ -38,11 +38,12 @@ void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, 
     bp *c = resu->data;
     
     // 关键优化：预计算偏移，减少乘法运算
-
+    if(m > n){
     multi_process(m,[=]wrapper_custom_start_end{
-        for(uint16_t i = start; i < end; i++){
         // 预计算A的行偏移
-        uint32_t a_row_offset = i * k;
+        uint32_t a_row_offset = start * k;
+        for(uint16_t i = start; i < end; i++){
+        
         
         for(uint16_t j = 0; j < n; j++){
             _tmp_larger sum = 0;
@@ -59,8 +60,59 @@ void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, 
             
             c[i * n + j] = (bp)((sum + (1LL << (QSHIFT - 1))) >> QSHIFT);
         }
-    }    
+
+        a_row_offset += k;
+        }    
     });
 
+    }else{
+        multi_process(n,[=]wrapper_custom_start_end{
+        for(uint16_t j = start; j < end; j++){
+        // 预计算A的行偏移
+        uint32_t a_row_offset = 0;
+        
+        for(uint16_t i = 0; i < m; i++){
+            _tmp_larger sum = 0;
+            
+            // 内循环使用指针运算
+            bp *a_ptr = &a[a_row_offset];
+            bp *b_ptr = &b[j];  // B的第j列起始位置
+            
+            for(uint16_t kk = 0; kk < k; kk++){
+                sum += ((_tmp_larger)(*a_ptr) * (*b_ptr));
+                a_ptr++;
+                b_ptr += n;  // 跳到B的下一行（列优先访问）
+            }
+            
+            c[i * n + j] = (bp)((sum + (1LL << (QSHIFT - 1))) >> QSHIFT);
+            a_row_offset += k;
+            }
+        }    
+    });
 
+    }
+}
+
+void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest){
+    bp *src = (bp*)source->data;
+    bp *dst = dest->data;
+
+    const uint16_t m = source->rows;
+    const uint16_t n = source->cols;
+
+    dest->cols = m;
+    dest->rows = n;
+
+    uint8_t isInplace = (source == dest);
+
+    for(uint16_t i = 0; i < m; i++){
+        bp *start0 = src + i * n;
+        bp *destBlock0 = dst + i;
+
+        for(uint16_t j = 0; j < n; j++){
+            *destBlock0 = *start0;
+            start0++;
+            destBlock0 += m;
+        }
+    }
 }

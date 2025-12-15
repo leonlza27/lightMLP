@@ -17,4 +17,6 @@ void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, mat
 
 void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
 
+void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest);
+
 #endif

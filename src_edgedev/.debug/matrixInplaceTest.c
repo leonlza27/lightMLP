@@ -3,6 +3,7 @@
 #include "../qfix_ops/qfix_op.h"
 #include <stdlib.h>
 #include <time.h>
+#include <linux/time.h>
 
 // Linux/macOS: 纳秒级精度
 uint64_t get_time_ns() {
