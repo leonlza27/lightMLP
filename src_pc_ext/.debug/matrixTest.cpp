@@ -38,7 +38,7 @@ int main(){
     matrix_bp m3;
     matrix_bp mr;
 
-    int m = 500, k = 3, n = 500;
+    int m = 6, k = 3, n = 4;
 
     srand(time(0));
 
@@ -67,6 +67,7 @@ int main(){
     //for(int i = 0; i < m * k; i++) m1->data[i] = rand() % (1 << 19);
     //for(int i = 0; i < n * k; i++) m2->data[i] = rand() % (1 << 19);
     
+    for(int i = 0; i < n * m; i++) m3->data[i] = rand() % (1 << 19);
 
     /*
     m1->data[0] = float_to_qfix(1.0f);
@@ -80,18 +81,20 @@ int main(){
 
     time4(matrix_bp_transpose(m3, mr);)
 
-    //for(int i = 0; i < m3->rows; i++){
-    //    for(int j = 0; j < m3->cols; j++){
-    //        printf("%d\t",m3->data[i * m3->cols + j]);
-    //    }
-    //    putc('\n',stdout);
-    //}
-//
-    //for(int i = 0; i < mr->rows; i++){
-    //    for(int j = 0; j < mr->cols; j++){
-    //        printf("%d\t",mr->data[i * mr->cols + j]);
-    //    }
-    //    putc('\n',stdout);
-    //}
+    for(int i = 0; i < m3->rows; i++){
+        for(int j = 0; j < m3->cols; j++){
+            printf("%d\t",m3->data[i * m3->cols + j]);
+        }
+        putc('\n',stdout);
+    }
+
+    putc('\n',stdout);
+
+    for(int i = 0; i < mr->rows; i++){
+        for(int j = 0; j < mr->cols; j++){
+            printf("%d\t",mr->data[i * mr->cols + j]);
+        }
+        putc('\n',stdout);
+    }
 
 }
