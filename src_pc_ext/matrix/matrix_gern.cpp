@@ -105,14 +105,30 @@ void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest){
 
     uint8_t isInplace = (source == dest);
 
-    for(uint16_t i = 0; i < m; i++){
-        bp *start0 = src + i * n;
-        bp *destBlock0 = dst + i;
+    if(m > n){
+        multi_process(m,[=]wrapper_custom_start_end{
+            for(uint16_t i = start; i < end; i++){
+                bp *start0 = src + i * n;
+                bp *destBlock0 = dst + i;
 
-        for(uint16_t j = 0; j < n; j++){
-            *destBlock0 = *start0;
-            start0++;
-            destBlock0 += m;
-        }
+                for(uint16_t j = 0; j < n; j++){
+                    *destBlock0 = *start0;
+                    start0++;
+                    destBlock0 += m;
+                }
+            }
+        });
+    }else{
+        multi_process(n,[=]wrapper_custom_start_end{
+            for(uint16_t j = start;j < end;j++){
+                bp *start0 = src + j;
+                bp *destBlock0 = dst + j * m;
+                for(uint16_t i = 0; i < m; i++){
+                    *destBlock0 = *start0;
+                    start0 += n;
+                    destBlock0++;
+                }
+            }
+        });
     }
 }
