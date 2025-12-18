@@ -10,7 +10,7 @@ void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, mat
     bp *in2_base = madd2->data;
     bp *out_base = resu->data;
     
-    uint16_t i = 0;
+    uint32_t i = 0;
 
     for(; i < size; i+=4){
         out_base[i] = in1_base[i] + in2_base[i];

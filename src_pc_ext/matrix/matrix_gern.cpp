@@ -132,3 +132,27 @@ void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest){
         });
     }
 }
+
+void matrix_bp_mulptyByElem(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu){
+    resu->cols = mmul1->cols;
+    resu->rows = mmul1->rows;
+    uint32_t size = mmul1->cols * mmul1->rows;
+    
+    bp *in1_base = (bp*)mmul1->data;
+    bp *in2_base = (bp*)mmul2->data;
+    bp *out_base = resu->data;
+    multi_process(size,[=]wrapper_custom_start_end{
+    uint16_t i = start;
+
+    for(; i < end; i+=4){
+        out_base[i] = qfix_mul(in1_base[i],in2_base[i]);
+        out_base[i + 1] = qfix_mul(in1_base[i + 1], in2_base[i + 1]);
+        out_base[i + 2] = qfix_mul(in1_base[i + 2], in2_base[i + 2]);
+        out_base[i + 3] = qfix_mul(in1_base[i + 3], in2_base[i + 3]);
+    }
+
+    for(; i < end; i++){
+        out_base[i] = qfix_mul(in1_base[i],in2_base[i]);
+    }
+    });    
+}
