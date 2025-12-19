@@ -7,12 +7,12 @@
 
 //预存变量
 
-static const qfix Q_ZERO = float_to_qfix(0.0f);
-static const qfix Q_ONE = float_to_qfix(1.0f);
-static const qfix Q_NEG_ONE = float_to_qfix(-1.0f);
-static const qfix Q_HALF = float_to_qfix(0.5f);
-static const qfix Q_POINT_TWO = float_to_qfix(0.2f);
-static const qfix six = float_to_qfix(6.0f);
+static const qfix Q_0 = float_to_qfix(0.0f);
+static const qfix Q_1p0 = float_to_qfix(1.0f);
+static const qfix Q_neg1p0 = float_to_qfix(-1.0f);
+static const qfix Q_0p5 = float_to_qfix(0.5f);
+static const qfix Q_0p2 = float_to_qfix(0.2f);
+static const qfix Q_6p0 = float_to_qfix(6.0f);
 
 //实现
 
@@ -44,7 +44,7 @@ static inline void ReLU(const matrix_qfix input, matrix_qfix output){
     const qfix* in = input->data;
     qfix* out = output->data;
     
-    _acLoop_process(size,out[i] = qfmax(Q_ZERO, in[i]);)
+    _acLoop_process(size,out[i] = qfmax(Q_0, in[i]);)
 }
 
 static inline void ReLU6(const matrix_qfix input, matrix_qfix output){
@@ -53,7 +53,7 @@ static inline void ReLU6(const matrix_qfix input, matrix_qfix output){
     const qfix* in = input->data;
     qfix* out = output->data;
     
-    _acLoop_process(size, out[i] = qfmin(six, qfmax(Q_ZERO, in[i]));)
+    _acLoop_process(size, out[i] = qfmin(Q_6p0, qfmax(Q_0, in[i]));)
 }
 
 static inline void LeakyReLU(const matrix_qfix input,matrix_qfix output, qfix alpha){
@@ -71,8 +71,8 @@ static inline void Sigmoid_Hard(const matrix_qfix input, matrix_qfix output){
     
     _acLoop_process(size,{
         // Direct computation without temporary variable
-        qfix val = Q_HALF + (qfix)((Q_POINT_TWO * (_tmp_larger)in[i]) >> QSHIFT); // Approximate multiply using shift
-        out[i] = (val > Q_ONE) ? Q_ONE : (val < Q_ZERO ? Q_ZERO : val);
+        qfix val = Q_0p5 + (qfix)((Q_0p2 * (_tmp_larger)in[i]) >> QSHIFT); // Approximate multiply using shift
+        out[i] = (val > Q_1p0) ? Q_1p0 : (val < Q_0 ? Q_0 : val);
     })
 }
 
@@ -81,7 +81,7 @@ static inline void Tanh_Hard(const matrix_qfix input, matrix_qfix output){
     const qfix* in = input->data;
     qfix* out = output->data;
     
-    _acLoop_process(size, out[i] = (in[i] > Q_ONE) ? Q_ONE : (in[i] < Q_NEG_ONE ? Q_NEG_ONE : in[i]);)
+    _acLoop_process(size, out[i] = (in[i] > Q_1p0) ? Q_1p0 : (in[i] < Q_neg1p0 ? Q_neg1p0 : in[i]);)
 }
 
 static inline void Sigmoid(const matrix_qfix input, matrix_qfix output){
@@ -89,7 +89,7 @@ static inline void Sigmoid(const matrix_qfix input, matrix_qfix output){
     const qfix* in = input->data;
     qfix* out = output->data;
     
-    _acLoop_process(size, out[i] = qfix_div(Q_ONE, Q_ONE + exp_qfix(-in[i]));)
+    _acLoop_process(size, out[i] = qfix_div(Q_1p0, Q_1p0 + exp_qfix(-in[i]));)
 }
 
 static inline void Tanh(const matrix_qfix input, matrix_qfix output){
@@ -109,7 +109,7 @@ static inline void Sign(const matrix_qfix input, matrix_qfix output){
     const qfix* in = input->data;
     qfix* out = output->data;
     
-    _acLoop_process(size, out[i] = in[i] > 0 ? Q_ONE : Q_ZERO;)
+    _acLoop_process(size, out[i] = in[i] > 0 ? Q_1p0 : Q_0;)
 }
 
 static inline void Softmax(const matrix_qfix input, matrix_qfix output){    
