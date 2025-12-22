@@ -57,5 +57,3 @@ void mlpNetRef::infer(matrix_bp input){
     }    
 
 }
-
-

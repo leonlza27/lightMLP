@@ -57,4 +57,49 @@ void mlpNetRef::infer(matrix_bp input){
 
 }
 
+void mlpNetTrainer::init(uint16_t lyrnum, NetLyrConf *netstruct){
+    lyrData = netstruct;
+    netLyrCount = lyrnum;
 
+    fullConnData = (matrix_bp*)malloc(sizeof(matrix_bp) * lyrnum);
+    grad_to_last = (matrix_bp*)malloc(sizeof(matrix_bp) * lyrnum);
+    weights_T = (matrix_bp*)malloc(sizeof(matrix_bp) * lyrnum);
+    grad_weights = (matrix_bp*)malloc(sizeof(matrix_bp) * lyrnum);
+
+    uint16_t in_dim = 0, out_dim = 0;
+    for(uint16_t i = 0; i < lyrnum; i++){
+        in_dim = lyrData[i].existedWeightData->cols;
+        out_dim = lyrData[i].existedWeightData->rows;
+        grad_to_last[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + in_dim * sizeof(qfix));
+        fullConnData[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + out_dim * sizeof(qfix));
+        weights_T[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + out_dim * in_dim * sizeof(qfix));
+        grad_weights[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + out_dim * in_dim * sizeof(qfix));
+        matrix_bp_transpose(lyrData[i].existedWeightData, weights_T[i]);
+    }
+
+}
+
+void mlpNetTrainer::infer(matrix_bp input){
+    qfix alpha = *(qfix*)((char*)lyrData + sizeof(uint8_t));
+    uint8_t acTp = *(uint8_t*)lyrData;
+    matrix_bp weights = *(matrix_bp*)((char*)lyrData + sizeof(uint8_t) + sizeof(qfix));
+    matrix_bp bias = *(matrix_bp*)((char*)lyrData + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
+
+    fwdCalc(weights, bias, acTp, alpha, input, fullConnData[0]);
+
+    char *curAddr = 0;
+
+    for(uint16_t i = 1; i < netLyrCount; i++){
+        curAddr = (char*)(lyrData + i);
+        alpha = *(qfix*)(curAddr + sizeof(uint8_t));
+        acTp = *(uint8_t*)curAddr;
+        weights = *(matrix_bp*)(curAddr + sizeof(uint8_t) + sizeof(qfix));
+        bias = *(matrix_bp*)(curAddr + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
+
+        fwdCalc(weights, bias, acTp, alpha, fullConnData[i-1], fullConnData[i]);
+    }
+}
+
+void mlpNetTrainer::backward(matrix_bp grad_from_resu, qfix lr){
+
+}

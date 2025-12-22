@@ -36,19 +36,24 @@ public:
 
 class mlpNetTrainer{
 private:
-    matrix_bp fullConnData;      //全连接层
+    matrix_bp *fullConnData;      //全连接层
     NetLyrConf *lyrData;
     uint16_t netLyrCount;
+
+    matrix_bp *weights_T;
+
+    matrix_bp *grad_weights;
+    matrix_bp *grad_to_last;
 
 public:
     void init(uint16_t lyrnum,NetLyrConf *netstruct);
     void infer(matrix_bp input);
     
-    void backward(matrix_bp grad_from_resu);
+    void backward(matrix_bp grad_from_resu, qfix lr);
 
-    inline void resu_refAddr(matrix_bp output){output = fullConnData + netLyrCount - 1;};
+    inline void resu_refAddr(matrix_bp output){output = fullConnData[netLyrCount - 1];};
     inline void resu_copyied(matrix_bp output){
-        matrix_bp resu = fullConnData + netLyrCount - 1;
+        matrix_bp resu = fullConnData[netLyrCount - 1];
         uint16_t ElemSize = resu->cols * resu->rows;
         qfix *outDim = output->data;
         qfix *sourceDim = resu->data;
