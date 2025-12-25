@@ -40,10 +40,15 @@ private:
     NetLyrConf *lyrData;
     uint16_t netLyrCount;
 
-    matrix_bp *weights_T;
+    //训练用缓存数据,每次被操作层以backCalc的lyridx为准
 
-    matrix_bp *grad_weights;
-    matrix_bp *grad_to_last;
+    matrix_bp *weights_T;       //层W^T缓存
+
+    matrix_bp *grad_weights;    //W梯度(初始)缓存
+    matrix_bp *grad_to_last;    //到上一层的初始梯度(dL[last]/da[last])
+    matrix_bp *grad_this_det;   //层 da/dy
+
+    inline void backCalc(uint16_t lyridx, matrix_bp grad, qfix lr);
 
 public:
     void init(uint16_t lyrnum,NetLyrConf *netstruct);
