@@ -1,10 +1,10 @@
 #mlp训练一层backward参考
 import numpy as np
 
-tg = np.array([[3],[4]])
+tg = np.array([[2],[2]])
 
-w = np.array([[3, 4],[4 , 5]])
-b = np.array([[3],[4]])
+w = np.array([[0, 0],[0 , 0]])
+b = np.array([[0],[0]])
 
 in1 = np.array([[1],[4]])
 
