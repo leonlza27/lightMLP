@@ -2,7 +2,7 @@
 #define _mlp_activator
 
 #include <stdint.h>
-#include "../matrix/matrix_static.h"
+#include "../matrix/matrix_gern.h"
 #include "../tools/mult_proc.h"
 
 //预存变量

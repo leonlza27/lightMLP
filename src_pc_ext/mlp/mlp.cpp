@@ -80,8 +80,8 @@ inline void mlpNetTrainer::backCalc(uint16_t lyridx, matrix_bp grad, qfix lr){
         case type_Tanh:         grad_Tanh(grad, dady_this); break;
         case type_Tanh_hard:    grad_Tanh_Hard(grad, dady_this); break;
         case type_Sign:         grad_Sign(grad, dady_this); break;
-        case type_Softmax:      for(uint16_t i = 0; i < vec_y_size; i++) dady_this[i] = grad[i]; break;
-        default:                for(uint16_t i = 0; i < vec_y_size; i++) dady_this[i] = grad[i]; break;
+        case type_Softmax:
+        default:                {for(uint16_t i = 0; i < vec_y_size; i++) {dady_this->data[i] = grad->data[i];}} break;
     }
 
     x_this->cols = vec_x_size;
@@ -95,6 +95,8 @@ inline void mlpNetTrainer::backCalc(uint16_t lyridx, matrix_bp grad, qfix lr){
     uint32_t size = vec_x_size * vec_y_size;
     for(uint32_t i = 0; i < size; i++) weights->data[i] -= qfix_mul(lr, grad_w_this->data[i]);
 
+    matrix_bp_transpose(weights, weights_T[lyridx]);
+    
     x_this->rows = vec_x_size;
     x_this->cols = 1;    
 }   
@@ -115,34 +117,38 @@ void mlpNetTrainer::init(uint16_t lyrnum, NetLyrConf *netstruct){
         out_dim = lyrData[i].existedWeightData->rows;
         grad_to_last[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + in_dim * sizeof(qfix));
         grad_this_det[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + out_dim * sizeof(qfix));
-        fullConnData[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + out_dim * sizeof(qfix));
+        fullConnData[i + 1] = (matrix_bp)malloc(sizeof(matrix_bp_data) + out_dim * sizeof(qfix));
         weights_T[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + out_dim * in_dim * sizeof(qfix));
         grad_weights[i] = (matrix_bp)malloc(sizeof(matrix_bp_data) + out_dim * in_dim * sizeof(qfix));
         matrix_bp_transpose(lyrData[i].existedWeightData, weights_T[i]);
+        
+        grad_to_last[i]->rows = in_dim;
+        grad_to_last[i]->cols = 1;
+        
+        grad_this_det[i]->rows = out_dim;
+        grad_this_det[i]->cols = 1;
     }
 }
 
 void mlpNetTrainer::infer(matrix_bp input){
-    qfix alpha = *(qfix*)((char*)lyrData + sizeof(uint8_t));
-    uint8_t acTp = *(uint8_t*)lyrData;
-    matrix_bp weights = *(matrix_bp*)((char*)lyrData + sizeof(uint8_t) + sizeof(qfix));
-    matrix_bp bias = *(matrix_bp*)((char*)lyrData + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
-
-    fwdCalc(weights, bias, acTp, alpha, input, fullConnData[0]);
+    fullConnData[0] = input;
 
     char *curAddr = 0;
 
-    for(uint16_t i = 1; i < netLyrCount; i++){
-        curAddr = (char*)(lyrData + i);
-        alpha = *(qfix*)(curAddr + sizeof(uint8_t));
-        acTp = *(uint8_t*)curAddr;
-        weights = *(matrix_bp*)(curAddr + sizeof(uint8_t) + sizeof(qfix));
-        bias = *(matrix_bp*)(curAddr + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
+    for(uint16_t i = 0; i < netLyrCount; i++){
+        qfix alpha = *(qfix*)((char*)lyrData + sizeof(uint8_t));
+        uint8_t acTp = *(uint8_t*)lyrData;
+        matrix_bp weights = *(matrix_bp*)((char*)lyrData + sizeof(uint8_t) + sizeof(qfix));
+        matrix_bp bias = *(matrix_bp*)((char*)lyrData + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
 
-        fwdCalc(weights, bias, acTp, alpha, fullConnData[i-1], fullConnData[i]);
+        fwdCalc(weights, bias, acTp, alpha, fullConnData[i], fullConnData[i + 1]);
     }
 }
 
 void mlpNetTrainer::backward(matrix_bp grad_from_resu, qfix lr){
+    backCalc(netLyrCount - 1, grad_from_resu, lr);
 
+    for(uint16_t i = netLyrCount - 1; i > 0; i--){
+        backCalc(i - 1, grad_to_last[i], lr);
+    }
 }

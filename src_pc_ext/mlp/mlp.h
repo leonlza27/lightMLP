@@ -25,7 +25,7 @@ public:
     void init(uint16_t lyrnum,NetLyrConf *netstruct);
     void infer(matrix_bp input);
 
-    inline void resu_refAddr(matrix_bp output){output = fullConnDataMid;};
+    inline matrix_bp resu_refAddr(){return fullConnDataMid;}
     inline void resu_copyied(matrix_bp output){
         uint16_t ElemSize = fullConnDataMid->cols * fullConnDataMid->rows;
         qfix *outDim = output->data;
@@ -56,9 +56,9 @@ public:
     
     void backward(matrix_bp grad_from_resu, qfix lr);
 
-    inline void resu_refAddr(matrix_bp output){output = fullConnData[netLyrCount - 1];};
+    inline matrix_bp resu_refAddr(){return fullConnData[netLyrCount];}
     inline void resu_copyied(matrix_bp output){
-        matrix_bp resu = fullConnData[netLyrCount - 1];
+        matrix_bp resu = fullConnData[netLyrCount];
         uint16_t ElemSize = resu->cols * resu->rows;
         qfix *outDim = output->data;
         qfix *sourceDim = resu->data;

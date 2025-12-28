@@ -13,7 +13,25 @@ typedef struct matrix_bp_data{
     bp data[];//行优先展开
 }matrix_bp_data,*matrix_bp, *matrix_qfix;
 
+#include <stdio.h>
+
+#define formatMatrix(mr)    {for(int i = 0; i < mr->rows; i++){\
+        for(int j = 0; j < mr->cols; j++){\
+            printf("%d\t",mr->data[i * mr->cols + j]);\
+        }\
+        putc('\n',stdout);\
+    }putc('\n',stdout);}\
+
+#define formatMatrix2f(mr)    {for(int i = 0; i < mr->rows; i++){\
+        for(int j = 0; j < mr->cols; j++){\
+            printf("%f\t",qfix_to_float(mr->data[i * mr->cols + j]));\
+        }\
+        putc('\n',stdout);\
+    }putc('\n',stdout);}\
+
 void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu);
+
+void matrix_bp_sub(const matrix_bp_data *msrc, const matrix_bp_data *msub, matrix_bp_data *resu);
 
 void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
 
