@@ -10,8 +10,8 @@
 typedef struct _netLyrConf{
     uint8_t Activetype;       //层激活类型
     qfix dataExtra;         
-    matrix_bp existedWeightData;      //已有权重数据(matrix inLen * outLen)
-    matrix_bp existedBiasData;        //已有偏置数据(matrix 1 * outLen)
+    matrix_bp existedWeightData;      //已有权重数据(matrix out_dim * in_dim)
+    matrix_bp existedBiasData;        //已有偏置数据(matrix out_dim * 1)
 }NetLyrConf;
 #pragma pack(pop)
 

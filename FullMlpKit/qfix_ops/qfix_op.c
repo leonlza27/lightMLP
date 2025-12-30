@@ -16,7 +16,7 @@ qfix exp_qfix(qfix x){
 
     return insert_y0 + qfix_mul(insert_y1 - insert_y0, frac);
 
-    // 保留原有计算作为后备方案
+    // 泰勒展开为后备方案
     /*
     qf_cur_cast n =  x >> QSHIFT;
     qf_cur_cast r = x & QF_FLOAT_MASK;

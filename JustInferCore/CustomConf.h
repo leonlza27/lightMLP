@@ -8,6 +8,10 @@
 #include <limits.h>
 
 //定点数配置
+//如果实在要性能或硬件吃不消可以退回至Q8.8
+//一般Q16.16可以兼顾精度与数值范围
+
+//注:为兼顾无硬件浮点平台cpu或其他运算硬件平台,本库核心将不做FP(浮点)支持
 
 typedef int16_t f_q8_8;
 typedef int32_t f_q16_16;
@@ -20,7 +24,7 @@ typedef int32_t f_q16_16;
 #define Q16_MAX INT32_MAX
 #define Q16_MIN INT32_MIN
 
-#ifdef CPU_PLATFORM_8BIT
+#ifdef BP_Q8p8_Acquire
 typedef f_q8_8 qfix;
 #define QSHIFT 8
 #define _tmp_larger int32_t
@@ -44,8 +48,7 @@ typedef int32_t qf_cur_cast;
 #define QF_EXP_LUT exp_lut_q16
 #endif
 
-// exp函数LUT表(调整区间为[-8,8]，q8.8为128点，q16.16为256点)
-#ifdef CPU_PLATFORM_8BIT
+#ifdef BP_Q8p8_Acquire
 static const f_q8_8 exp_lut_q8[128] = {
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,

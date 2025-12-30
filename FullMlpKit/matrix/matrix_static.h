@@ -4,7 +4,7 @@
 namespace mbp_static{
 //__cpp_spefic:(强制)启用cpp名称修饰,需要用cpp编译器编译那部分c源码
 #define __cpp_spefic
-#include "../../src_edgedev/matrix/matrix_static.h"
+#include "../../JustInferCore/matrix/matrix_static.h"
 
 }
 
