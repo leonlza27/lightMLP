@@ -32,7 +32,8 @@ void mlpNetRef::init(uint16_t lyrnum,NetLyrConf *netstruct){
         maxSize = curSize > maxSize? curSize : maxSize;
     }
 
-    fullConnDataMid = (matrix_bp)malloc(maxSize * sizeof(qfix) + 4);
+    fullConnDataMid[0] = (matrix_bp)malloc(maxSize * sizeof(qfix) + 4);
+    fullConnDataMid[1] = (matrix_bp)malloc(maxSize * sizeof(qfix) + 4);
 
 }
 
@@ -42,7 +43,7 @@ void mlpNetRef::infer(matrix_bp input){
     matrix_bp weights = *(matrix_bp*)((char*)lyrData + sizeof(uint8_t) + sizeof(qfix));
     matrix_bp bias = *(matrix_bp*)((char*)lyrData + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
 
-    fwdCalc(weights, bias, acTp, alpha, input, fullConnDataMid);
+    fwdCalc(weights, bias, acTp, alpha, input, fullConnDataMid[0]);
 
     char *curAddr = 0;
 
@@ -53,7 +54,7 @@ void mlpNetRef::infer(matrix_bp input){
         weights = *(matrix_bp*)(curAddr + sizeof(uint8_t) + sizeof(qfix));
         bias = *(matrix_bp*)(curAddr + sizeof(uint8_t) + sizeof(qfix) + sizeof(matrix_bp));
 
-        fwdCalc(weights, bias, acTp, alpha, fullConnDataMid, fullConnDataMid);
+        fwdCalc(weights, bias, acTp, alpha, fullConnDataMid[(i - 1) % 2], fullConnDataMid[i % 2]);
     }    
 
 }

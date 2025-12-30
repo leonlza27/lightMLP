@@ -52,18 +52,18 @@ void matrix_bp_scale(const matrix_bp_data *msrc, const qfix num, matrix_bp_data 
     resu->rows = msrc->rows;
     uint32_t size = msrc->cols * msrc->rows;
         
-    bp *in1_base = (bp*)madd1->data;
+    bp *in1_base = (bp*)msrc->data;
     bp *out_base = resu->data;
         
     uint16_t i = 0;
-    for(; i < end; i+=4){
+    for(; i < size; i+=4){
         out_base[i] = qfix_mul(in1_base[i], num);
         out_base[i + 1] = qfix_mul(in1_base[i + 1], num);
         out_base[i + 2] = qfix_mul(in1_base[i + 2], num);
         out_base[i + 3] = qfix_mul(in1_base[i + 3], num);
     }
 
-        for(; i < end; i++){
+        for(; i < size; i++){
             out_base[i] = qfix_mul(in1_base[i], num);
     }
 }
@@ -79,15 +79,15 @@ void matrix_bp_mulptyByElem(const matrix_bp_data *mmul1, const matrix_bp_data *m
     
     uint32_t i = 0;
 
-    for(; i < end; i+=4){
-        out_base[i] = qfix_mul(in1_base[i], num);
-        out_base[i + 1] = qfix_mul(in1_base[i + 1], num);
-        out_base[i + 2] = qfix_mul(in1_base[i + 2], num);
-        out_base[i + 3] = qfix_mul(in1_base[i + 3], num);
+    for(; i < size; i+=4){
+        out_base[i] = qfix_mul(in1_base[i], in2_base[i]);
+        out_base[i + 1] = qfix_mul(in1_base[i + 1], in2_base[i + 1]);
+        out_base[i + 2] = qfix_mul(in1_base[i + 2], in2_base[i + 2]);
+        out_base[i + 3] = qfix_mul(in1_base[i + 3], in2_base[i + 3]);
     }
 
-    for(; i < end; i++){
-        out_base[i] = qfix_mul(in1_base[i], num);
+    for(; i < size; i++){
+        out_base[i] = qfix_mul(in1_base[i], in2_base[i]);
     }
 }
 

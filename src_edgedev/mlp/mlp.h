@@ -17,7 +17,7 @@ typedef struct _netLyrConf{
 
 class mlpNetRef{
 private:
-    matrix_bp fullConnDataMid;      //全连接层
+    matrix_bp fullConnDataMid[2];      //全连接层
     NetLyrConf *lyrData;
     uint16_t netLyrCount;
 
@@ -25,7 +25,7 @@ public:
     void init(uint16_t lyrnum,NetLyrConf *netstruct);
     void infer(matrix_bp input);
 
-    inline void resu_refAddr(matrix_bp output){output = fullConnDataMid;};
+    inline matrix_bp resu_refAddr(){return fullConnDataMid[(netLyrCount - 1)%2];}
     inline void resu_copyied(matrix_bp output){
         uint16_t ElemSize = fullConnDataMid->cols * fullConnDataMid->rows;
         qfix *outDim = output->data;
