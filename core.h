@@ -2,7 +2,7 @@
 #define _lightmlp_core_
 
 namespace lightmlp{
-    #include "FullMlpKit/mlp/mlp.h"
+    #include "mlpCppCore/mlp/mlp.h"
 }
 
 #endif

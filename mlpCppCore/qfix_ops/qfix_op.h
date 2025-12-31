@@ -1,7 +1,7 @@
 #ifndef _qfix_operations_
 #define _qfix_operations_
 
-#include "../../JustInferCore/CustomConf.h"
+#include "../CustomConf.h"
 
 
 //类型转换
