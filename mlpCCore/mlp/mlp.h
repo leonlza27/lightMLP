@@ -14,7 +14,6 @@ typedef struct _netLyrConf{
 }NetLyrConf;
 #pragma pack(pop)
 
-
 typedef struct _data_mlpNetRef{
     matrix_bp fullConnDataMid[2];      //全连接层
     NetLyrConf *lyrData;
