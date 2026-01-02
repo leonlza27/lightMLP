@@ -61,7 +61,8 @@ void (mark)(void* param){\
 \
     for(size_t i = 1; i< threadnum; i++){\
         Rate *loc = &subpara[i];\
-        loc->start = i * tasks_per_proc;\
+        size_t ratestart = i * tasks_per_proc;\
+        loc->start = ratestart;\
         loc->end = min(ratestart + tasks_per_proc,total_tasks);\
         loc->data = &dataIn;\
         pthread_create(subthreads + i, 0, workerFunc, loc);\
@@ -77,7 +78,7 @@ void (mark)(void* param){\
         pthread_join(subthreads[i], 0);\
     }\
     free(subthreads);\
-    free(subpara)\
+    free(subpara);\
 }\
 
 #endif

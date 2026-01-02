@@ -9,7 +9,7 @@ void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, mat
     bp *in2_base = (bp*)madd2->data;
     bp *out_base = resu->data;
     multi_process(size,[=]wrapper_custom_start_end{
-    uint16_t i = start;
+    uint32_t i = start;
 
     for(; i < end; i+=4){
         out_base[i] = in1_base[i] + in2_base[i];
@@ -29,7 +29,7 @@ void matrix_bp_scale(const matrix_bp_data *msrc, const qfix num, matrix_bp_data 
         resu->rows = msrc->rows;
         uint32_t size = msrc->cols * msrc->rows;
         
-        bp *in1_base = (bp*)madd1->data;
+        bp *in1_base = (bp*)msrc->data;
         bp *out_base = resu->data;
         
         multi_process(size,[=]wrapper_custom_start_end{
