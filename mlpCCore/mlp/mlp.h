@@ -4,6 +4,7 @@
 #include "../matrix/matrix_static.h"
 #include "activator.h"
 #include <stdint.h>
+#include <math.h>
 
 #pragma pack(1)
 typedef struct _netLyrConf{

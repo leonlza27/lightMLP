@@ -13,13 +13,9 @@
 extern "C"{
 #endif
 
-static inline qfix qfmin(qfix num1, qfix num2){
-    return num1 < num2? num1: num2;
-}
+#define qfmin(num1, num2) (num1 < num2)? num1: num2
 
-static inline qfix qfmax(qfix num1, qfix num2){
-    return num1 > num2? num1: num2;
-}
+#define qfmax(num1, num2) (num1 > num2)? num1: num2
 
 //运算
 static inline qfix qfix_add(qfix num1, qfix num2){

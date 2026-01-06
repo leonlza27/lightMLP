@@ -60,7 +60,7 @@ void lmlp_ref_infer(mlpNetRefInfo net, matrix_bp input){
 
 }
 
-inline void backCalc(mlpNetTrainInfo net, uint16_t lyridx, matrix_bp grad, qfix lr){
+void backCalc(mlpNetTrainInfo net, uint16_t lyridx, matrix_bp grad, qfix lr){
     qfix _alpha = *(qfix*)((char*)&net.lyrData[lyridx] + sizeof(uint8_t));
     uint8_t acTp = *(uint8_t*)&net.lyrData[lyridx];
     matrix_bp weights = *(matrix_bp*)((char*)&net.lyrData[lyridx] + sizeof(uint8_t) + sizeof(qfix));
@@ -92,10 +92,10 @@ inline void backCalc(mlpNetTrainInfo net, uint16_t lyridx, matrix_bp grad, qfix 
     matrix_bp_mulpty(dady_this, x_this, grad_w_this);
     matrix_bp_mulpty(net.weights_T[lyridx], dady_this, net.grad_to_last[lyridx]);
 
-    for(uint16_t i = 0; i < vec_y_size; i++) bias->data[i] -= qfix_mul(lr, dady_this->data[i]);
+    for(uint16_t i = 0; i < vec_y_size; i++) bias->data[i] += qfix_mul(lr, dady_this->data[i]);
 
     uint32_t size = vec_x_size * vec_y_size;
-    for(uint32_t i = 0; i < size; i++) weights->data[i] -= qfix_mul(lr, grad_w_this->data[i]);
+    for(uint32_t i = 0; i < size; i++) weights->data[i] += qfix_mul(lr, grad_w_this->data[i]);
 
     matrix_bp_transpose(weights, net.weights_T[lyridx]);
     

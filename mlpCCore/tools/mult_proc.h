@@ -1,6 +1,7 @@
 #ifndef _mult_proc_c
 #define _mult_proc_c
 #include <stdint.h>
+#include <stdlib.h>
 
 /*
 说明:
@@ -12,7 +13,7 @@
 或自定义multi_process函数接入平台线程调度器对应函数
 */
 
-typedef void (*SubFn)(void*);
+typedef void *(*SubFn)(void*);
 
 #define BLOCK_SIZE 512
 #define BIG_BLOCK_SIZE BLOCK_SIZE * 5
@@ -41,6 +42,9 @@ void (mark)(void* param){\
     fn;\
 }\
 
+#define _max(a,b) a > b? a : b
+#define _min(a,b) a < b? a : b
+
 #ifndef forced_sigle_thread
 #ifdef _WIN32
 
@@ -52,8 +56,8 @@ void (mark)(void* param){\
 
 #define multi_process_c(total_tasks, workerFunc, dataIn){\
     long avaCpuCount = sysconf(_SC_NPROCESSORS_ONLN);\
-    size_t threadnum =  (size_t)(sqrt(total_tasks/BLOCK_SIZE) + total_tasks / BIG_BLOCK_SIZE - 1);\
-    threadnum = max(min(threadnum,avaCpuCount),1);\
+    size_t threadnum =  (size_t)((total_tasks * (total_tasks + 4)) / (total_tasks * 4 + 8));\
+    threadnum = _max(_min(threadnum,avaCpuCount),1);\
     pthread_t *subthreads = (pthread_t*)(malloc(sizeof(pthread_t)*threadnum));\
     Rate *subpara = (Rate*)(malloc(sizeof(Rate)*threadnum));\
 \
@@ -63,14 +67,14 @@ void (mark)(void* param){\
         Rate *loc = &subpara[i];\
         size_t ratestart = i * tasks_per_proc;\
         loc->start = ratestart;\
-        loc->end = min(ratestart + tasks_per_proc,total_tasks);\
+        loc->end = _min(ratestart + tasks_per_proc,total_tasks);\
         loc->data = &dataIn;\
         pthread_create(subthreads + i, 0, workerFunc, loc);\
     }\
 \
     Rate *locm = subpara;\
     locm->start = 0;\
-    locm->end = min(tasks_per_proc,total_tasks);\
+    locm->end = _min(tasks_per_proc,total_tasks);\
     locm->data = &dataIn;\
     (workerFunc)(locm);\
 \
