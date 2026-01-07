@@ -275,3 +275,37 @@ void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest){
         multi_process_c(n, mT_noverm, para)
     }
 }
+
+void plot_matrix_bp(matrix_bp tg, uint16_t m, uint16_t n, ...){
+    tg->rows = m;
+    tg->cols = n;
+    uint32_t size = m * n;
+    qfix *dataDst = tg->data;
+
+    va_list elemin;
+    va_start(elemin, n);
+
+    int64_t arg0 = va_arg(elemin, int64_t);
+
+    switch(arg0){
+        case shapeOnly: goto _ret; break;
+        case copyFromExisted: {
+            qfix* existed = va_arg(elemin, qfix*);
+            for(uint32_t i = 0; i < size; i++){
+                dataDst[i] = existed[i];
+            }
+
+            goto _ret;
+        }
+        break;
+
+        default: dataDst[0] = arg0;
+    }
+
+    for(uint32_t i = 1; i < size; i++){
+        dataDst[i] = va_arg(elemin, qfix);
+    }
+
+    _ret:
+    va_end(elemin);
+}
