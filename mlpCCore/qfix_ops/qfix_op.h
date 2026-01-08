@@ -6,8 +6,11 @@
 
 //类型转换
 
-#define float_to_qfix(value) (qfix)(value * (float)(1 << QSHIFT))
-#define qfix_to_float(qfvalue) ((float)qfvalue / (float)(1 << QSHIFT))
+//虽然名字里只有浮点,但它其实同时支持浮点与整数输入 :)
+#define float_to_qfix(value) (qfix)(value * (1 << QSHIFT))
+#define qfix_to_float(qfvalue) ((float)qfvalue / (1 << QSHIFT))
+#define qfix_to_float64(qfvalue) ((double)qfvalue / (1 << QSHIFT))
+#define qfix_to_int(qfvalue) (qfvalue >> QSHIFT)
 
 #ifdef __cplusplus
 extern "C"{

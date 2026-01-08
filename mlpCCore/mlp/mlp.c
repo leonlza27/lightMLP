@@ -155,3 +155,32 @@ void lmlp_trainer_backward(mlpNetTrainInfo net, matrix_bp grad_from_resu, qfix l
         backCalc(net, i - 1, net.grad_to_last[i], lr);
     }
 }
+
+void lmlp_cleanup_trainer(mlpNetTrainInfo *net){
+    uint16_t lyrnum = net->netLyrCount;
+     for(uint16_t i = 0; i < lyrnum; i++){
+        free(net->grad_to_last[i]);
+        free(net->grad_this_det[i]);
+        free(net->fullConnData[i + 1]);
+        free(net->weights_T[i]);
+        free(net->grad_weights[i]);
+    }
+
+    free(net->fullConnData);
+    free(net->grad_this_det);
+    free(net->grad_to_last);
+    free(net->grad_weights);
+    free(net->weights_T);
+
+    net->lyrData = 0;
+    net->netLyrCount = 0;
+
+}
+
+void lmlp_cleanup_ref(mlpNetRefInfo *net){
+    free(net->fullConnDataMid[0]);
+    free(net->fullConnDataMid[1]);
+
+    net->lyrData = 0;
+    net->netLyrCount = 0;
+}
