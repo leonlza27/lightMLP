@@ -33,13 +33,26 @@ typedef struct Rate{
     void* data;
 }Rate;
 
+#ifdef _WIN32
+#include <windows.h>
+#define _RTp DWORD
+#else
+#ifndef forced_sigle_thread
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/sysinfo.h>
+#endif
+#define _RTp void*
+#endif
+
 #define registerTask(mark, fn)\
-void (mark)(void* param){\
+_RTp (mark)(void* param){\
     Rate *para = (Rate*)param;\
     size_t start = para->start;\
     size_t end = para->end;\
     void* data = para->data;\
     fn;\
+    return 0;\
 }\
 
 #define _max(a,b) a > b? a : b
@@ -47,13 +60,42 @@ void (mark)(void* param){\
 
 #ifndef forced_sigle_thread
 #ifdef _WIN32
+#define multi_process_c(total_tasks, workerFunc, dataIn){\
+    SYSTEM_INFO info;\
+    GetSystemInfo(&info)\
+    long avaCpuCount = info.dwNumberOfProcessors;\
+    size_t threadnum =  (size_t)((total_tasks * (total_tasks + 4)) / (total_tasks * 4 + 8));\
+    threadnum = _max(_min(threadnum,avaCpuCount),1);\
+    pthread_t *subthreads = (HANDLE*)(malloc(sizeof(HANDLE)*threadnum));\
+    Rate *subpara = (Rate*)(malloc(sizeof(Rate)*threadnum));\
+\
+    size_t tasks_per_proc = (size_t)(total_tasks/threadnum) + 2;\
+\
+    for(size_t i = 1; i< threadnum; i++){\
+        Rate *loc = &subpara[i];\
+        size_t ratestart = i * tasks_per_proc;\
+        loc->start = ratestart;\
+        loc->end = _min(ratestart + tasks_per_proc,total_tasks);\
+        loc->data = &dataIn;\
+        subthreads[i] = CreateThread(0, 0, workerFunc, loc, 0, 0);\
+    }\
+\
+    Rate *locm = subpara;\
+    locm->start = 0;\
+    locm->end = _min(tasks_per_proc,total_tasks);\
+    locm->data = &dataIn;\
+    (workerFunc)(locm);\
+\
+    for(size_t i = 1; i< threadnum; i++){\
+        WaitForSigleObject(subthreads[i], INFINITE);\
+        CloseHandle(subthreads[i]);\
+    }\
+    free(subthreads);\
+    free(subpara);\
+}\
+
 
 #else
-
-#include <pthread.h>
-#include <unistd.h>
-#include <sys/sysinfo.h>
-
 #define multi_process_c(total_tasks, workerFunc, dataIn){\
     long avaCpuCount = sysconf(_SC_NPROCESSORS_ONLN);\
     size_t threadnum =  (size_t)((total_tasks * (total_tasks + 4)) / (total_tasks * 4 + 8));\
