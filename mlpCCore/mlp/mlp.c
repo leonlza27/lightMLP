@@ -156,6 +156,15 @@ void lmlp_trainer_backward(mlpNetTrainInfo net, matrix_bp grad_from_resu, qfix l
     }
 }
 
+void lmlp_trainer_get_grad0(mlpNetTrainInfo net, matrix_bp grad0){
+    matrix_bp src = net.grad_to_last[0];
+    uint32_t size = src->rows;
+
+    qfix *from = src->data;
+    qfix* dst = grad0->data;
+    for(uint32_t i = 0; i < size; i++) dst[i] = from[i];
+}
+
 void lmlp_cleanup_trainer(mlpNetTrainInfo *net){
     uint16_t lyrnum = net->netLyrCount;
      for(uint16_t i = 0; i < lyrnum; i++){
