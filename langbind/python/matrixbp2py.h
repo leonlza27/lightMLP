@@ -1,0 +1,32 @@
+#include <python3.12/Python.h>
+#include "mlpCCore/matrix/matrix_static.h"
+
+
+typedef struct _mbp_topy{
+    PyObject_HEAD
+    matrix_bp info;
+}matrixbp_py;
+
+static PyObject* mbp_new(PyTypeObject *tp, PyObject *args, PyObject *kwargs);
+static int mbp_init(PyObject *self, PyObject *args, PyObject *kwargs);
+static void mbp_dealloc(PyObject *self);
+
+static PyObject *mbp_repr(PyObject *self);
+
+static PyTypeObject mbp_py_tpdef = {
+    .ob_base = PyVarObject_HEAD_INIT(0, 0)
+    .tp_name = "bp16p16matrix.matrixbp",
+    .tp_basicsize = sizeof(matrixbp_py),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DEFAULT,
+    .tp_new = mbp_new,
+    .tp_init = mbp_init,
+    .tp_dealloc = mbp_dealloc,
+    .tp_repr = mbp_repr
+};
+
+static struct PyModuleDef matrixbp_topy_root = {
+    PyModuleDef_HEAD_INIT, "bp16p16matrix", 0, 0
+};
+
+PyMODINIT_FUNC PyInit_bp16p16matrix();
