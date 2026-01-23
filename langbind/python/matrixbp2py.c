@@ -34,15 +34,55 @@ PyObject *mbp_repr(PyObject *self){
     printf("[matrixbp at shape %d rows * %d cols]\n", rows, cols);
     for(uint16_t i = 0; i < rows; i++){
         putc('|', stdout);
-        putc('\t', stdout);
+        putc(' ', stdout);
         qfix* r_this = data + i * cols;
         for(uint16_t j = 0; j < cols; j++){
-            printf("%4d\t", r_this[j]);
+            printf("%.4f, ", qfix_to_float64(r_this[j]));
         }
         putc('|', stdout);
         putc('\n', stdout);
     }
     return PyUnicode_FromString("");
+}
+
+PyObject *mbp_fromlist(PyObject *self, PyObject *args){
+    PyObject *lstin;
+    if(!PyArg_ParseTuple(args, "O", &lstin)){
+        PyErr_SetString(PyExc_TypeError, "input must a list[int | float]\n");
+        return Py_None;
+    }
+    if(!PyList_Check(lstin)){
+        PyErr_SetString(PyExc_TypeError, "input must a list[int | float]\n");
+        return Py_None;
+    }
+
+    matrix_bp tg = ((matrixbp_py*)self)->info;
+    uint32_t size = tg->cols * tg->rows;
+
+    if(size > PyList_GET_SIZE(lstin)){
+        PyErr_SetString(PyExc_TypeError, "size of list isnot equal or larger than capacity of matrix\n");
+        return Py_None;
+    }
+
+    qfix *dtg = tg->data;
+    PyObject *cur;
+
+    for(uint32_t i = 0; i < size; i++){
+        cur = PyList_GetItem(lstin, i);
+        if(PyFloat_Check(cur)){
+            dtg[i] = float_to_qfix(PyFloat_AsDouble(cur));
+            continue;
+        }
+        if(PyLong_Check(cur)){
+            dtg[i] = float_to_qfix(PyLong_AsLong(cur));
+            continue;
+        }
+        PyErr_SetString(PyExc_TypeError, "list contains a non_number(float or int) value\n");
+        return Py_None;
+    }
+ 
+
+    return Py_None;
 }
 
 PyMODINIT_FUNC PyInit_bp16p16matrix(){

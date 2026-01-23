@@ -13,6 +13,13 @@ static void mbp_dealloc(PyObject *self);
 
 static PyObject *mbp_repr(PyObject *self);
 
+static PyObject *mbp_fromlist(PyObject *self, PyObject *args);
+
+static PyMethodDef fn_mbp_py[] = {
+    {"fromlist", mbp_fromlist, METH_VARARGS, "initlize from a list"},
+    {0}
+};
+
 static PyTypeObject mbp_py_tpdef = {
     .ob_base = PyVarObject_HEAD_INIT(0, 0)
     .tp_name = "bp16p16matrix.matrixbp",
@@ -22,7 +29,8 @@ static PyTypeObject mbp_py_tpdef = {
     .tp_new = mbp_new,
     .tp_init = mbp_init,
     .tp_dealloc = mbp_dealloc,
-    .tp_repr = mbp_repr
+    .tp_repr = mbp_repr,
+    .tp_methods = fn_mbp_py,
 };
 
 static struct PyModuleDef matrixbp_topy_root = {
