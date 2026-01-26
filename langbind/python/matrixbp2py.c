@@ -49,11 +49,11 @@ PyObject *mbp_fromlist(PyObject *self, PyObject *args){
     PyObject *lstin;
     if(!PyArg_ParseTuple(args, "O", &lstin)){
         PyErr_SetString(PyExc_TypeError, "input must a list[int | float]\n");
-        return Py_None;
+        return 0;
     }
     if(!PyList_Check(lstin)){
         PyErr_SetString(PyExc_TypeError, "input must a list[int | float]\n");
-        return Py_None;
+        return 0;
     }
 
     matrix_bp tg = ((matrixbp_py*)self)->info;
@@ -61,7 +61,7 @@ PyObject *mbp_fromlist(PyObject *self, PyObject *args){
 
     if(size > PyList_GET_SIZE(lstin)){
         PyErr_SetString(PyExc_TypeError, "size of list isnot equal or larger than capacity of matrix\n");
-        return Py_None;
+        return 0;
     }
 
     qfix *dtg = tg->data;
@@ -78,11 +78,63 @@ PyObject *mbp_fromlist(PyObject *self, PyObject *args){
             continue;
         }
         PyErr_SetString(PyExc_TypeError, "list contains a non_number(float or int) value\n");
-        return Py_None;
+        return 0;
     }
  
 
-    return Py_None;
+    Py_RETURN_NONE;
+}
+
+PyObject *mbp_add(PyObject *self, PyObject *args){
+    matrixbp_py *m1, *m2, *mr;
+    if(!PyArg_ParseTuple(args, "OOO", &m1, &m2, &mr)) return 0;
+    matrix_bp_add(m1->info, m2->info, mr->info);
+    Py_RETURN_NONE;
+}
+
+PyObject *mbp_sub(PyObject *self, PyObject *args){
+    matrixbp_py *m1, *m2, *mr;
+    if(!PyArg_ParseTuple(args, "OOO", &m1, &m2, &mr)) return 0;
+    matrix_bp_sub(m1->info, m2->info, mr->info);
+    Py_RETURN_NONE;
+}
+
+PyObject *mbp_scale(PyObject *self, PyObject *args){
+    matrixbp_py *m1, *mr;
+    PyObject *sc_o;
+    if(!PyArg_ParseTuple(args, "OOO", &m1, &sc_o, &mr)) return 0;
+    qfix sc_v;
+    if(PyLong_Check(sc_o)){
+        sc_v = float_to_qfix(PyLong_AsLong(sc_o));
+    }else if(PyFloat_Check(sc_o)){
+        sc_v = float_to_qfix(PyFloat_AsDouble(sc_o));
+    }else{
+        PyErr_SetString(PyExc_TypeError,"arg \"sc_v'\" unexcepted type: not a int or float");
+    }
+
+    matrix_bp_scale(m1->info, sc_v, mr->info);
+    Py_RETURN_NONE;
+}
+
+PyObject *mbp_mulByElem(PyObject *self, PyObject *args){
+    matrixbp_py *m1, *m2, *mr;
+    if(!PyArg_ParseTuple(args, "OOO", &m1, &m2, &mr)) return 0;
+    matrix_bp_mulptyByElem(m1->info, m2->info, mr->info);
+    Py_RETURN_NONE;
+}
+
+PyObject *mbp_mul(PyObject *self, PyObject *args){
+    matrixbp_py *m1, *m2, *mr;
+    if(!PyArg_ParseTuple(args, "OOO", &m1, &m2, &mr)) return 0;
+    matrix_bp_mulpty(m1->info, m2->info, mr->info);
+    Py_RETURN_NONE;
+}
+
+PyObject *mbp_transpose(PyObject *self, PyObject *args){
+    matrixbp_py *m1, *mr;
+    if(!PyArg_ParseTuple(args, "OO", &m1, &mr)) return 0;
+    matrix_bp_transpose(m1->info, mr->info);
+    Py_RETURN_NONE;
 }
 
 PyMODINIT_FUNC PyInit_bp16p16matrix(){

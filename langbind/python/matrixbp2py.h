@@ -33,8 +33,27 @@ static PyTypeObject mbp_py_tpdef = {
     .tp_methods = fn_mbp_py,
 };
 
+
+static PyObject *mbp_add(PyObject *self, PyObject *args);
+static PyObject *mbp_sub(PyObject *self, PyObject *args);
+static PyObject *mbp_scale(PyObject *self, PyObject *args);
+static PyObject *mbp_mulByElem(PyObject *self, PyObject *args);
+static PyObject *mbp_mul(PyObject *self, PyObject *args);
+static PyObject *mbp_transpose(PyObject *self, PyObject *args);
+
+static PyMethodDef moudlefns[] = {
+    {"madd", mbp_add, METH_VARARGS, 0},
+    {"msub", mbp_sub, METH_VARARGS, 0},
+    {"mscale", mbp_scale, METH_VARARGS, 0},
+    {"mmulElem", mbp_mulByElem, METH_VARARGS, 0},
+    {"mmul", mbp_mul, METH_VARARGS, 0},
+    {"mtpose", mbp_transpose, METH_VARARGS, 0},
+    {0, 0, 0, 0}
+};
+
 static struct PyModuleDef matrixbp_topy_root = {
-    PyModuleDef_HEAD_INIT, "bp16p16matrix", 0, 0
+    PyModuleDef_HEAD_INIT, "bp16p16matrix", 0, 0,
+    .m_methods = moudlefns
 };
 
 PyMODINIT_FUNC PyInit_bp16p16matrix();
