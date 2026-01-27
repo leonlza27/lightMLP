@@ -1,4 +1,6 @@
 #include "matrixbp2py.h"
+#include <stdlib.h>
+#include <time.h>
 
 PyObject *mbp_new(PyTypeObject *tp, PyObject *args, PyObject *kwargs){
     matrixbp_py *obnew = (matrixbp_py*)tp->tp_alloc(tp, 0);
@@ -80,21 +82,30 @@ PyObject *mbp_fromlist(PyObject *self, PyObject *args){
         PyErr_SetString(PyExc_TypeError, "list contains a non_number(float or int) value\n");
         return 0;
     }
- 
+    Py_RETURN_NONE;
+}
 
+PyObject *mbp_fromrand(PyObject *self, PyObject *args){
+    matrixbp_py *obj = (matrixbp_py*)self;
+    uint32_t size = obj->info->rows * obj->info->cols;
+    qfix *data = obj->info->data;
+    srand(time(0));
+    
+    for(uint32_t i = 0; i < size; i++) data[i] = ((rand() % (1 << 15)) - (1 << 16)) << 8;
+    
     Py_RETURN_NONE;
 }
 
 PyObject *mbp_add(PyObject *self, PyObject *args){
     matrixbp_py *m1, *m2, *mr;
-    if(!PyArg_ParseTuple(args, "OOO", &m1, &m2, &mr)) return 0;
+    if(!PyArg_ParseTuple(args, "O!O!O!",&mbp_py_tpdef, &m1, &mbp_py_tpdef, &m2, &mbp_py_tpdef, &mr)) return 0;
     matrix_bp_add(m1->info, m2->info, mr->info);
     Py_RETURN_NONE;
 }
 
 PyObject *mbp_sub(PyObject *self, PyObject *args){
     matrixbp_py *m1, *m2, *mr;
-    if(!PyArg_ParseTuple(args, "OOO", &m1, &m2, &mr)) return 0;
+    if(!PyArg_ParseTuple(args, "O!O!O!", &mbp_py_tpdef, &m1, &mbp_py_tpdef, &m2, &mbp_py_tpdef, &mr)) return 0;
     matrix_bp_sub(m1->info, m2->info, mr->info);
     Py_RETURN_NONE;
 }
@@ -102,14 +113,15 @@ PyObject *mbp_sub(PyObject *self, PyObject *args){
 PyObject *mbp_scale(PyObject *self, PyObject *args){
     matrixbp_py *m1, *mr;
     PyObject *sc_o;
-    if(!PyArg_ParseTuple(args, "OOO", &m1, &sc_o, &mr)) return 0;
+    if(!PyArg_ParseTuple(args, "O!OO!", &mbp_py_tpdef, &m1, &sc_o, &mbp_py_tpdef, &mr)) return 0;
     qfix sc_v;
     if(PyLong_Check(sc_o)){
         sc_v = float_to_qfix(PyLong_AsLong(sc_o));
     }else if(PyFloat_Check(sc_o)){
         sc_v = float_to_qfix(PyFloat_AsDouble(sc_o));
     }else{
-        PyErr_SetString(PyExc_TypeError,"arg \"sc_v'\" unexcepted type: not a int or float");
+        PyErr_SetString(PyExc_TypeError,"arg \"sc_v\" unexcepted type: not a int or float");
+        return 0;
     }
 
     matrix_bp_scale(m1->info, sc_v, mr->info);
@@ -118,21 +130,21 @@ PyObject *mbp_scale(PyObject *self, PyObject *args){
 
 PyObject *mbp_mulByElem(PyObject *self, PyObject *args){
     matrixbp_py *m1, *m2, *mr;
-    if(!PyArg_ParseTuple(args, "OOO", &m1, &m2, &mr)) return 0;
+    if(!PyArg_ParseTuple(args, "O!O!O!", &mbp_py_tpdef, &m1, &mbp_py_tpdef, &m2, &mbp_py_tpdef, &mr)) return 0;
     matrix_bp_mulptyByElem(m1->info, m2->info, mr->info);
     Py_RETURN_NONE;
 }
 
 PyObject *mbp_mul(PyObject *self, PyObject *args){
     matrixbp_py *m1, *m2, *mr;
-    if(!PyArg_ParseTuple(args, "OOO", &m1, &m2, &mr)) return 0;
+    if(!PyArg_ParseTuple(args, "O!O!O!", &mbp_py_tpdef, &m1, &mbp_py_tpdef, &m2, &mbp_py_tpdef, &mr)) return 0;
     matrix_bp_mulpty(m1->info, m2->info, mr->info);
     Py_RETURN_NONE;
 }
 
 PyObject *mbp_transpose(PyObject *self, PyObject *args){
     matrixbp_py *m1, *mr;
-    if(!PyArg_ParseTuple(args, "OO", &m1, &mr)) return 0;
+    if(!PyArg_ParseTuple(args, "O!O!", &mbp_py_tpdef, &m1, &mbp_py_tpdef, &mr)) return 0;
     matrix_bp_transpose(m1->info, mr->info);
     Py_RETURN_NONE;
 }

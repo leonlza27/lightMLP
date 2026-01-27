@@ -14,9 +14,11 @@ static void mbp_dealloc(PyObject *self);
 static PyObject *mbp_repr(PyObject *self);
 
 static PyObject *mbp_fromlist(PyObject *self, PyObject *args);
+PyObject *mbp_fromrand(PyObject *self, PyObject *args);
 
 static PyMethodDef fn_mbp_py[] = {
     {"fromlist", mbp_fromlist, METH_VARARGS, "initlize from a list"},
+    {"fromrand", mbp_fromrand, METH_VARARGS, "initlize with a random value"},
     {0}
 };
 
