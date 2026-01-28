@@ -14,11 +14,14 @@ static void mbp_dealloc(PyObject *self);
 static PyObject *mbp_repr(PyObject *self);
 
 static PyObject *mbp_fromlist(PyObject *self, PyObject *args);
-PyObject *mbp_fromrand(PyObject *self, PyObject *args);
+static PyObject *mbp_fromrand(PyObject *self, PyObject *args);
+
+static PyObject *mbp_tolist(PyObject *self, PyObject *args, PyObject *args_dict);
 
 static PyMethodDef fn_mbp_py[] = {
     {"fromlist", mbp_fromlist, METH_VARARGS, "initlize from a list"},
     {"fromrand", mbp_fromrand, METH_VARARGS, "initlize with a random value"},
+    {"tolist", mbp_tolist, METH_VARARGS | METH_KEYWORDS, "dump a matrixbp to a python list in 1d or 2d"},
     {0}
 };
 

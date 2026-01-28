@@ -91,9 +91,51 @@ PyObject *mbp_fromrand(PyObject *self, PyObject *args){
     qfix *data = obj->info->data;
     srand(time(0));
     
-    for(uint32_t i = 0; i < size; i++) data[i] = ((rand() % (1 << 15)) - (1 << 16)) << 8;
+    for(uint32_t i = 0; i < size; i++) data[i] = ((rand() % (1 << 16)) - (1 << 15)) << 8;
     
     Py_RETURN_NONE;
+}
+
+PyObject *mbp_tolist(PyObject *self, PyObject *args, PyObject *args_dict){
+    matrixbp_py *obj = (matrixbp_py*)self;
+    PyObject *is2d = 0;
+    static char *kwds[] = {"arr2d", 0};
+    if(!PyArg_ParseTupleAndKeywords(args, args_dict, "|O", kwds, &is2d)) return 0;
+    uint16_t rows = obj->info->rows;
+    uint16_t cols = obj->info->cols;
+    qfix *data = obj->info->data;
+    PyObject *retlst;
+    if(!is2d) goto _ret_normlst;
+    uint8_t is2d_b = PyBool_Check(is2d);
+    uint8_t is2d_i =  PyLong_Check(is2d); 
+    if(!(is2d_b || is2d_i)){
+        PyErr_SetString(PyExc_TypeError, "arg \"arr2d\" unexcepted type: not a bool or int");
+        return 0;
+    }
+    if((is2d_b && (is2d == Py_True)) || (is2d_i && PyLong_AsLong(is2d))){
+        retlst = PyList_New(rows);
+        for(uint16_t i = 0; i < rows; i++){
+            PyObject *rcolcur = PyList_New(cols);
+            qfix *dcolcur = data + i;
+            for(uint16_t j = 0; j < cols; j++){
+                PyObject *vacur = PyFloat_FromDouble(qfix_to_float64(dcolcur[j]));
+                PyList_SetItem(rcolcur, j, vacur);
+            }
+            PyList_SetItem(retlst, i, rcolcur);
+        }
+
+        return retlst;
+    }
+
+    _ret_normlst:
+
+    uint32_t size = cols * rows;
+    retlst = PyList_New(size);
+    for(uint32_t i = 0; i < size; i++){
+        PyObject *vacur = PyFloat_FromDouble(qfix_to_float64(data[i]));
+        PyList_SetItem(retlst, i, vacur);
+    }
+    return retlst;
 }
 
 PyObject *mbp_add(PyObject *self, PyObject *args){
