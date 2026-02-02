@@ -1,3 +1,5 @@
+#ifndef _matrixbp2py
+#define _matrixbp2py
 #include <python3.12/Python.h>
 #include "mlpCCore/matrix/matrix_static.h"
 
@@ -30,7 +32,7 @@ static PyTypeObject mbp_py_tpdef = {
     .tp_name = "bp16p16matrix.matrixbp",
     .tp_basicsize = sizeof(matrixbp_py),
     .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DEFAULT,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = mbp_new,
     .tp_init = mbp_init,
     .tp_dealloc = mbp_dealloc,
@@ -62,3 +64,5 @@ static struct PyModuleDef matrixbp_topy_root = {
 };
 
 PyMODINIT_FUNC PyInit_bp16p16matrix();
+
+#endif
