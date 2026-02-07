@@ -43,6 +43,8 @@ void lmlp_trainer_infer(mlpNetTrainInfo net, matrix_bp input);
 
 void lmlp_trainer_backward(mlpNetTrainInfo net, matrix_bp grad_from_resu, qfix lr);
 
+void lmlp_trainer_get_grad0(mlpNetTrainInfo net, matrix_bp grad0); 
+
 void lmlp_cleanup_trainer(mlpNetTrainInfo *net);
 void lmlp_cleanup_ref(mlpNetRefInfo *net);
 

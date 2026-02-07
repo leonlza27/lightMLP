@@ -17,164 +17,137 @@ typedef struct dExchange2dop{
     uint16_t dimoth2;
 }dExchange2dop;
 
-registerTask(maddloop,{
+registerTask(maddloop, {
     dExchange *datain = (dExchange*)data;
     bp *in1_base = datain->in1;
     bp *in2_base = datain->in2;
     bp *out_base = datain->opt;
-
     uint32_t i = start;
-
     for(; i < end; i+=4){
         out_base[i] = in1_base[i] + in2_base[i];
         out_base[i + 1] = in1_base[i + 1] + in2_base[i + 1];
         out_base[i + 2] = in1_base[i + 2] + in2_base[i + 2];
         out_base[i + 3] = in1_base[i + 3] + in2_base[i + 3];
     }
-
     for(; i < end; i++){
         out_base[i] = in1_base[i] + in2_base[i];
     }
 })
 
-registerTask(msubloop,{
-    dExchange *datain = (dExchange*)data;
+registerTask(msubloop, {
+    dExchange *datain = (dExchange *)data;
     bp *in1_base = datain->in1;
     bp *in2_base = datain->in2;
     bp *out_base = datain->opt;
-
     uint32_t i = start;
-
-    for(; i < end; i+=4){
+    for (; i < end; i += 4){
         out_base[i] = in1_base[i] - in2_base[i];
         out_base[i + 1] = in1_base[i + 1] - in2_base[i + 1];
         out_base[i + 2] = in1_base[i + 2] - in2_base[i + 2];
         out_base[i + 3] = in1_base[i + 3] - in2_base[i + 3];
     }
-
-    for(; i < end; i++){
+    for (; i < end; i++){
         out_base[i] = in1_base[i] - in2_base[i];
     }
 })
 
-registerTask(mscaleloop,{
-    dExchange *datain = (dExchange*)data;
+registerTask(mscaleloop, {
+    dExchange *datain = (dExchange *)data;
     bp *in1_base = datain->in1;
     bp num = datain->num;
     bp *out_base = datain->opt;
-
     uint32_t i = start;
-
-    for(; i < end; i+=4){
+    for (; i < end; i += 4){
         out_base[i] = qfix_mul(in1_base[i], num);
         out_base[i + 1] = qfix_mul(in1_base[i + 1], num);
         out_base[i + 2] = qfix_mul(in1_base[i + 2], num);
         out_base[i + 3] = qfix_mul(in1_base[i + 3], num);
     }
-
-        for(; i < end; i++){
-            out_base[i] = qfix_mul(in1_base[i], num);
+    for (; i < end; i++){
+        out_base[i] = qfix_mul(in1_base[i], num);
     }
 })
 
-registerTask(mmulelemloop,{
-    dExchange *datain = (dExchange*)data;
+registerTask(mmulelemloop, {
+    dExchange *datain = (dExchange *)data;
     bp *in1_base = datain->in1;
     bp *in2_base = datain->in2;
     bp *out_base = datain->opt;
-
     uint32_t i = start;
-
-    for(; i < end; i+=4){
+    for (; i < end; i += 4){
         out_base[i] = qfix_mul(in1_base[i], in2_base[i]);
         out_base[i + 1] = qfix_mul(in1_base[i + 1], in2_base[i + 1]);
         out_base[i + 2] = qfix_mul(in1_base[i + 2], in2_base[i + 2]);
         out_base[i + 3] = qfix_mul(in1_base[i + 3], in2_base[i + 3]);
     }
-
-    for(; i < end; i++){
+    for (; i < end; i++){
         out_base[i] = qfix_mul(in1_base[i], in2_base[i]);
     }
 })
 
-registerTask(mmul_movern,{
-    dExchange2dop *datain = (dExchange2dop*)data;
+registerTask(mmul_movern, {
+    dExchange2dop *datain = (dExchange2dop *)data;
     bp *a = datain->in1;
     bp *b = datain->in2;
     bp *c = datain->opt;
     uint16_t k = datain->dimoth1;
     uint16_t n = datain->dimoth2;
-
     uint32_t a_row_offset = start * k;
-        for(uint16_t i = start; i < end; i++){
-        
-        
-        for(uint16_t j = 0; j < n; j++){
+    for (uint16_t i = start; i < end; i++){
+        for (uint16_t j = 0; j < n; j++){
             _tmp_larger sum = 0;
-            
             // 内循环使用指针运算
             bp *a_ptr = &a[a_row_offset];
-            bp *b_ptr = &b[j];  // B的第j列起始位置
-            
-            for(uint16_t kk = 0; kk < k; kk++){
+            bp *b_ptr = &b[j]; // B的第j列起始位置
+            for (uint16_t kk = 0; kk < k; kk++){
                 sum += ((_tmp_larger)(*a_ptr) * (*b_ptr));
                 a_ptr++;
-                b_ptr += n;  // 跳到B的下一行（列优先访问）
+                b_ptr += n; // 跳到B的下一行（列优先访问）
             }
-            
             c[i * n + j] = (bp)((sum + (1LL << (QSHIFT - 1))) >> QSHIFT);
         }
-
         a_row_offset += k;
     }
-   
 })
 
-registerTask(mmul_noverm,{
-    dExchange2dop *datain = (dExchange2dop*)data;
+registerTask(mmul_noverm, {
+    dExchange2dop *datain = (dExchange2dop *)data;
     bp *a = datain->in1;
     bp *b = datain->in2;
     bp *c = datain->opt;
     uint16_t k = datain->dimoth1;
     uint16_t m = datain->dimoth0;
     uint16_t n = datain->dimoth2;
-
-    for(uint16_t j = start; j < end; j++){
+    for (uint16_t j = start; j < end; j++){
         // 预计算A的行偏移
         uint32_t a_row_offset = 0;
-        
-        for(uint16_t i = 0; i < m; i++){
+        for (uint16_t i = 0; i < m; i++){
             _tmp_larger sum = 0;
-            
             // 内循环使用指针运算
             bp *a_ptr = &a[a_row_offset];
-            bp *b_ptr = &b[j];  // B的第j列起始位置
-            
-            for(uint16_t kk = 0; kk < k; kk++){
+            bp *b_ptr = &b[j]; // B的第j列起始位置
+            for (uint16_t kk = 0; kk < k; kk++){
                 sum += ((_tmp_larger)(*a_ptr) * (*b_ptr));
                 a_ptr++;
-                b_ptr += n;  // 跳到B的下一行（列优先访问）
+                b_ptr += n; // 跳到B的下一行（列优先访问）
             }
-            
             c[i * n + j] = (bp)((sum + (1LL << (QSHIFT - 1))) >> QSHIFT);
             a_row_offset += k;
-            }
-        }  
-   
+        }
+    }
 })
 
-registerTask(mT_movern,{
-    dExchange2dop *datain = (dExchange2dop*)data;
+registerTask(mT_movern, {
+    dExchange2dop *datain = (dExchange2dop *)data;
     bp *src = datain->in1;
     bp *dst = datain->opt;
     uint16_t m = datain->dimoth0;
     uint16_t n = datain->dimoth2;
-
-    for(uint16_t i = start; i < end; i++){
+    for (uint16_t i = start; i < end; i++){
         bp *start0 = src + i * n;
         bp *destBlock0 = dst + i;
-
-        for(uint16_t j = 0; j < n; j++){
+        for (uint16_t j = 0; j < n; j++)
+        {
             *destBlock0 = *start0;
             start0++;
             destBlock0 += m;
@@ -182,17 +155,16 @@ registerTask(mT_movern,{
     }
 })
 
-registerTask(mT_noverm,{
-    dExchange2dop *datain = (dExchange2dop*)data;
+registerTask(mT_noverm, {
+    dExchange2dop *datain = (dExchange2dop *)data;
     bp *src = datain->in1;
     bp *dst = datain->opt;
     uint16_t m = datain->dimoth0;
     uint16_t n = datain->dimoth2;
-
-    for(uint16_t j = start;j < end;j++){
+    for (uint16_t j = start; j < end; j++){
         bp *start0 = src + j;
         bp *destBlock0 = dst + j * m;
-        for(uint16_t i = 0; i < m; i++){
+        for (uint16_t i = 0; i < m; i++){
             *destBlock0 = *start0;
             start0 += n;
             destBlock0++;
@@ -200,7 +172,14 @@ registerTask(mT_noverm,{
     }
 })
 
-void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu) {
+matrix_bp alloc_matrix_bp(uint16_t m, uint16_t n){
+    matrix_bp ret = (matrix_bp)malloc(sizeof(matrix_bp_data) + m * n * sizeof(qfix));
+    ret->rows = m;
+    ret->cols = n;
+    return ret;
+}
+
+void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu){
     resu->cols = madd1->cols;
     resu->rows = madd1->rows;
     uint32_t size = madd1->cols * madd1->rows;
@@ -276,18 +255,18 @@ void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest){
     }
 }
 
-void plot_matrix_bp(matrix_bp tg, uint16_t m, uint16_t n, ...){
+void plot_matrix_bp(matrix_bp tg, uint16_t m, uint16_t n, uint8_t flag, ...){
     tg->rows = m;
     tg->cols = n;
     uint32_t size = m * n;
     qfix *dataDst = tg->data;
 
     va_list elemin;
-    va_start(elemin, n);
+    va_start(elemin, flag);
 
     int64_t arg0 = va_arg(elemin, int64_t);
 
-    switch(arg0){
+    switch(flag){
         case shapeOnly: goto _ret; break;
         case copyFromExisted: {
             qfix* existed = va_arg(elemin, qfix*);
@@ -299,10 +278,10 @@ void plot_matrix_bp(matrix_bp tg, uint16_t m, uint16_t n, ...){
         }
         break;
 
-        default: dataDst[0] = arg0;
+        default: break;
     }
 
-    for(uint32_t i = 1; i < size; i++){
+    for(uint32_t i = 0; i < size; i++){
         dataDst[i] = va_arg(elemin, qfix);
     }
 
