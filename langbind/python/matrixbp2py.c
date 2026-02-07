@@ -3,22 +3,13 @@
 #include <time.h>
 
 PyObject *mbp_new(PyTypeObject *tp, PyObject *args, PyObject *kwargs){
-    matrixbp_py *obnew = (matrixbp_py*)tp->tp_alloc(tp, 0);
-    if(!obnew) return 0;
-    obnew->info = 0;
-    return (PyObject*) obnew;
-}
-
-int mbp_init(PyObject *self, PyObject *args, PyObject *kwargs){
     uint16_t rows, cols;
-    if(!PyArg_ParseTuple(args, "HH", &rows, &cols)) return -1;
-    matrixbp_py *obj = (matrixbp_py*)self;
-    obj->info = alloc_matrix_bp(rows, cols);
-    if(!obj->info){
-        PyErr_SetString(PyExc_MemoryError, "cannot alloc a matrix\n");
-        return -1;
-    }
-    return 0;
+    if(!PyArg_ParseTuple(args, "HH", &rows, &cols)) return 0;
+    matrixbp_py *obnew = (matrixbp_py*)tp->tp_alloc(tp, 0);
+    matrix_bp mnew = alloc_matrix_bp(rows, cols);
+    if(!obnew || !mnew) return 0;
+    obnew->info = mnew;
+    return (PyObject*) obnew;
 }
 
 void mbp_dealloc(PyObject *self){
@@ -116,7 +107,7 @@ PyObject *mbp_tolist(PyObject *self, PyObject *args, PyObject *args_dict){
         retlst = PyList_New(rows);
         for(uint16_t i = 0; i < rows; i++){
             PyObject *rcolcur = PyList_New(cols);
-            qfix *dcolcur = data + i;
+            qfix *dcolcur = data + i * cols;
             for(uint16_t j = 0; j < cols; j++){
                 PyObject *vacur = PyFloat_FromDouble(qfix_to_float64(dcolcur[j]));
                 PyList_SetItem(rcolcur, j, vacur);
@@ -191,12 +182,12 @@ PyObject *mbp_transpose(PyObject *self, PyObject *args){
     Py_RETURN_NONE;
 }
 
-PyMODINIT_FUNC PyInit_bp16p16matrix(){
+PyMODINIT_FUNC PyInit_libmbp16d(){
     PyObject *m;
     if(PyType_Ready(&mbp_py_tpdef)) return 0;
     m = PyModule_Create(&matrixbp_topy_root);
     if(!m) return 0;
-    if(PyModule_AddObjectRef(m, "matrixbp", (PyObject*)&mbp_py_tpdef)){
+    if(PyModule_AddObject(m, "matrixbp", (PyObject*)&mbp_py_tpdef)){
         Py_DecRef(m);
         return 0;
     }

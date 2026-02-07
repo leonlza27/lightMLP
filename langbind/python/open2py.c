@@ -92,13 +92,13 @@ PyObject *mlptrainerpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict
     mlptrain2py *ret = (mlptrain2py*)tp->tp_alloc(tp,0);
     if(!ret) return 0;
     Py_XINCREF(innet);
-    lmlp_setupTrainer(innet->size, innet->netsrc, ret->info);
+    lmlp_setupTrainer(innet->size, innet->netsrc, &ret->info);
     return (PyObject*)ret;
 }
 
 void mlptrainerpy_empty(PyObject *self){
     mlptrain2py *nfree = (mlptrain2py*)self;
-    lmlp_cleanup_trainer(nfree->info);
+    lmlp_cleanup_trainer(&nfree->info);
     Py_XDECREF(nfree->datasrc_py);
     Py_TYPE(nfree)->tp_free(nfree);
 }
@@ -108,26 +108,27 @@ PyObject *mlptrainerpy_execute(PyObject *self, PyObject *args){
     matrixbp_py *inputd, *outd = 0;
     if(!PyArg_ParseTuple(args, "O!|O!", &mbp_py_tpdef, &inputd, &mbp_py_tpdef, &outd)) return 0;
     matrix_bp input_data = inputd->info;
+    matrix_bp output_data = outd->info;
     if(input_data->cols > 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"input\" unexcepted size: not a vector(matrixbp rows must be 1)");
+        PyErr_SetString(PyExc_ValueError, "arg \"input\" unexcepted size: not a vector(matrixbp cols must be 1)");
         return 0;
     }
-    if(input_data.rows < obj->datasrc_py->netsrc->existedWeightData->cols){
+    if(input_data->rows < obj->datasrc_py->netsrc->existedWeightData->cols){
         PyErr_SetString(PyExc_ValueError, "arg \"input\" unexcepted size: rows of input less than the net required(refer your netdef for initlizing the trainer)");
         return 0;
     }
     uint16_t osize = obj->datasrc_py->netsrc->existedWeightData[obj->datasrc_py->size - 1].rows;
     if(outd){
         if(output_data->cols > 1){
-            PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: not a vector(matrixbp rows must be 1)");
+            PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: not a vector(matrixbp cols must be 1)");
             return 0;
         }
-        if(output_data.rows < osize){
+        if(output_data->rows < osize){
             PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: rows of output less than the net required(refer your netdef for initlizing the trainer)");
             return 0;
         }
     }else{
-        outd = PyObject_NEW(matrixbp_py, mbp_py_tpdef);
+        outd = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
         outd->info = alloc_matrix_bp(osize, 1);
     }
     
@@ -138,13 +139,34 @@ PyObject *mlptrainerpy_execute(PyObject *self, PyObject *args){
     return (PyObject*)outd;
 }
 
-PyMODINIT_FUNC PyInit_core(){
+PyObject *mlptrainerpy_backward(PyObject *self, PyObject *args){
+    matrixbp_py *grad_inital;
+    PyObject *lr_o;
+    if(!PyArg_ParseTuple(args, "O!O!", &mbp_py_tpdef, &grad_inital, &PyFloat_Type, &lr_o)) return 0;
+    mlptrain2py *obj = (mlptrain2py*)self;
+    if(grad_inital->info->cols > 1){
+        PyErr_SetString(PyExc_ValueError, "arg \"grad_inital\" unexcepted size: not a vector(matrixbp cols must be 1)");
+        return 0;
+    }
+    if(grad_inital->info->rows < obj->datasrc_py->netsrc->existedWeightData[obj->datasrc_py->size - 1].cols){
+        PyErr_SetString(PyExc_ValueError, "arg \"grad_inital\" unexcepted size: rows less than the net required(refer your netdef for initlizing the trainer)");
+        return 0;
+    }
+    lmlp_trainer_backward(obj->info, grad_inital, float_to_qfix(PyFloat_AsDouble(lr_o)));
+    Py_RETURN_NONE;
+}
+
+PyMODINIT_FUNC PyInit_libcore(){
     PyObject *module;
     if(PyType_Ready(&netstructpy_tpdef) < 0) return 0;
+    if(PyType_Ready(&mlptrainerpy_tpdef) < 0) return 0;
     module = PyModule_Create(&lightmlp_topy_root);
     if(module == 0) return 0;
+    PyObject *depency_mbp = PyImport_ImportModule("libmbp16d");
+    if(!depency_mbp) goto _ret_err;
+    if(PyModule_AddObject(module, "matrixbp16d", depency_mbp) < 0) goto _ret_err;
     if(PyModule_AddObject(module, "netdef", &netstructpy_tpdef) < 0) goto _ret_err;
-
+    if(PyModule_AddObject(module, "mlptrainer", &mlptrainerpy_tpdef) < 0) goto _ret_err;
     return module;
 
     _ret_err:

@@ -75,6 +75,6 @@ static struct PyModuleDef lightmlp_topy_root = {
     .m_methods = core_modulefns,
 };
 
-PyMODINIT_FUNC PyInit_core();
+PyMODINIT_FUNC PyInit_libcore();
 
 #endif

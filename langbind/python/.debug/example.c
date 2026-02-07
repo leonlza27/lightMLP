@@ -24,7 +24,7 @@ static void Date_dealloc(PyObject *self){
     Py_TYPE(obj)->tp_free(obj);
 }
 
-static PyObject *whattime(PyObject *self, PyObject *args){
+ PyObject *whattime(PyObject *self, PyObject *args){
     return PyLong_FromLong(time(0));
 }
 
