@@ -12,7 +12,7 @@ enum plotFlags{
     copyFromExisted
 };
 
-#pragma pack(4)
+#pragma pack(1)
 typedef struct matrix_bp_data{
     uint16_t rows/*行数*/,cols/*列数*/;
     bp data[];//行优先展开

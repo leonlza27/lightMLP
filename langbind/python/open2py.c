@@ -93,6 +93,7 @@ PyObject *mlptrainerpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict
     if(!ret) return 0;
     Py_XINCREF(innet);
     lmlp_setupTrainer(innet->size, innet->netsrc, &ret->info);
+    ret->datasrc_py = innet;
     return (PyObject*)ret;
 }
 
@@ -109,24 +110,26 @@ PyObject *mlptrainerpy_execute(PyObject *self, PyObject *args){
     if(!PyArg_ParseTuple(args, "O!|O!", &mbp_py_tpdef, &inputd, &mbp_py_tpdef, &outd)) return 0;
     matrix_bp input_data = inputd->info;
     matrix_bp output_data = outd->info;
-    if(input_data->cols > 1){
+    mlpNetTrainInfo tgnet = obj->info;
+     if(input_data->cols > 1){
         PyErr_SetString(PyExc_ValueError, "arg \"input\" unexcepted size: not a vector(matrixbp cols must be 1)");
         return 0;
     }
-    if(input_data->rows < obj->datasrc_py->netsrc->existedWeightData->cols){
+    if(input_data->rows < tgnet.lyrData->existedWeightData->cols){
         PyErr_SetString(PyExc_ValueError, "arg \"input\" unexcepted size: rows of input less than the net required(refer your netdef for initlizing the trainer)");
         return 0;
     }
-    uint16_t osize = obj->datasrc_py->netsrc->existedWeightData[obj->datasrc_py->size - 1].rows;
+    uint16_t osize = tgnet.fullConnData[tgnet.netLyrCount]->rows;
     if(outd){
-        if(output_data->cols > 1){
-            PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: not a vector(matrixbp cols must be 1)");
-            return 0;
-        }
-        if(output_data->rows < osize){
-            PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: rows of output less than the net required(refer your netdef for initlizing the trainer)");
-            return 0;
-        }
+        //if(output_data->cols > 1){
+        //    PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: not a vector(matrixbp cols must be 1)");
+        //    return 0;
+        //}
+        //if(output_data->rows < osize){
+        //    PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: rows of output less than the net required(refer your netdef for initlizing the trainer)");
+        //    return 0;
+        //}
+        Py_INCREF(outd);
     }else{
         outd = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
         outd->info = alloc_matrix_bp(osize, 1);
@@ -144,14 +147,14 @@ PyObject *mlptrainerpy_backward(PyObject *self, PyObject *args){
     PyObject *lr_o;
     if(!PyArg_ParseTuple(args, "O!O!", &mbp_py_tpdef, &grad_inital, &PyFloat_Type, &lr_o)) return 0;
     mlptrain2py *obj = (mlptrain2py*)self;
-    if(grad_inital->info->cols > 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"grad_inital\" unexcepted size: not a vector(matrixbp cols must be 1)");
-        return 0;
-    }
-    if(grad_inital->info->rows < obj->datasrc_py->netsrc->existedWeightData[obj->datasrc_py->size - 1].cols){
-        PyErr_SetString(PyExc_ValueError, "arg \"grad_inital\" unexcepted size: rows less than the net required(refer your netdef for initlizing the trainer)");
-        return 0;
-    }
+    //if(grad_inital->info->cols > 1){
+    //    PyErr_SetString(PyExc_ValueError, "arg \"grad_inital\" unexcepted size: not a vector(matrixbp cols must be 1)");
+    //    return 0;
+    //}
+    //if(grad_inital->info->rows < obj->datasrc_py->netsrc->existedWeightData[obj->datasrc_py->size - 1].cols){
+    //    PyErr_SetString(PyExc_ValueError, "arg \"grad_inital\" unexcepted size: rows less than the net required(refer your netdef for initlizing the trainer)");
+    //    return 0;
+    //}
     lmlp_trainer_backward(obj->info, grad_inital, float_to_qfix(PyFloat_AsDouble(lr_o)));
     Py_RETURN_NONE;
 }

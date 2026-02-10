@@ -132,7 +132,7 @@ _RTp (mark)(void* param){\
 #define multi_process_c(total_tasks, workerFunc, dataIn){\
     Rate locm;\
     locm.start = 0;\
-    locm.end = min(tasks_per_proc,total_tasks);\
+    locm.end = total_tasks;\
     locm.data = &dataIn;\
     (workerFunc)(&locm);\
 }\

@@ -25,7 +25,7 @@ static PyMethodDef fn_mbp_py[] = {
     {0}
 };
 
-static PyTypeObject mbp_py_tpdef = {
+PyTypeObject mbp_py_tpdef = {
     .ob_base = PyVarObject_HEAD_INIT(0, 0)
     .tp_name = "libmbp16d.matrixbp",
     .tp_basicsize = sizeof(matrixbp_py),

@@ -14,7 +14,10 @@ PyObject *mbp_new(PyTypeObject *tp, PyObject *args, PyObject *kwargs){
 
 void mbp_dealloc(PyObject *self){
     matrixbp_py *obj = (matrixbp_py*)self;
-    if(obj->info) free(obj->info);
+    if(obj->info) {
+        free(obj->info);
+        obj->info = 0;
+    }
     Py_TYPE(obj)->tp_free(obj);
 }
 
