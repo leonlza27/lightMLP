@@ -33,7 +33,7 @@ void mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr){
     uint32_t size = model->calclyrs;
     netLyrConf *nsrc = &model->modelsrc[size - 1];
     model->lyrinput_grad[size] = grad_inital;
-    const qfix** const fcd_export = model->fullConnData;
+    qfix** fcd_export = model->fullConnData;
     qfix **grads = model->lyrinput_grad;
     acCall gradfn;
     for(uint32_t l = size; l > 0; l--){
@@ -87,7 +87,7 @@ void mlptrainer_execute(mlpTrainStatus *model, qfix *arrin){
     uint32_t size = model->calclyrs;
     model->fullConnData[0] = arrin;
     netLyrConf *nsrc = model->modelsrc;
-    const qfix** const fcd_export = model->fullConnData;
+    qfix** fcd_export = model->fullConnData;
     acCall acfn;
     for(uint32_t i = 0; i < size; i++){
         qfix *in = fcd_export[i];

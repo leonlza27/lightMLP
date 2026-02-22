@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <stdlib.h>
 
 //定点数配置
 //如果实在要性能或硬件吃不消可以退回至Q8.8
