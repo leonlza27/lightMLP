@@ -16,7 +16,7 @@ void netdefpy_dealloc(PyObject *self);
 
 PyObject *buildnet(PyObject *_rtime, PyObject *args);
 
-static PyTypeObject netdefpy_tpdef = {
+PyTypeObject netdefpy_tpdef = {
     PyVarObject_HEAD_INIT(0, 0)
     .tp_basicsize = sizeof(netdefpy),
     .tp_itemsize = 0,
@@ -35,7 +35,9 @@ typedef struct mlpTrainStatPy{
 PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
 void mlptrainpy_dealloc(PyObject *self);
 
+//in python: mlptrain.execute(vecin: matrixbp)
 PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args);
+//in python: mlptrain.backward(grad: matrixbp, lr: Float)
 PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args);
 
 static PyMethodDef mlptrainpy_memberfns[] = {
@@ -43,6 +45,17 @@ static PyMethodDef mlptrainpy_memberfns[] = {
     {"backward", mlptrainpy_mbackward, METH_VARARGS, 0},
     {0,0,0,0},
 };
+
+PyTypeObject mlptrainpy_tpdef = {
+    PyVarObject_HEAD_INIT(0, 0)
+    .tp_basicsize = sizeof(mlpTrainStatPy),
+    .tp_itemsize = 0,
+    .tp_name = "mlptrain",
+    .tp_new = mlptrainpy_new,
+    .tp_dealloc = mlptrainpy_dealloc,
+    .tp_methods = mlptrainpy_memberfns,
+};
+
 static PyMethodDef libcorepy_modulefns[] = {
     {"buildnet", buildnet, METH_VARARGS, "build a net descrption from 0"},
     {0,0,0,0},

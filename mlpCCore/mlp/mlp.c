@@ -17,7 +17,7 @@ void mlptrainer_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
     }
 }
 
-void mlptrainer_clearup(mlpTrainStatus *net){
+void mlptrainer_cleanup(mlpTrainStatus *net){
     uint32_t size = net->calclyrs;
     for(uint32_t i = 0; i < size; i++){
         free(net->fullConnData[i + 1]);

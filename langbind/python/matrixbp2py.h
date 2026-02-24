@@ -1,7 +1,7 @@
 #ifndef _matrixbp2py
 #define _matrixbp2py
-#include <python3.12/Python.h>
-#include "mlpCCore/matrix/matrix_static.h"
+#include <python3.13/Python.h>
+#include "../../mlpCCore/matrix/matrix_static.h"
 
 typedef struct _mbp_topy{
     PyObject_HEAD
@@ -21,8 +21,8 @@ PyObject *mbp_tolist(PyObject *self, PyObject *args, PyObject *args_dict);
 static PyMethodDef fn_mbp_py[] = {
     {"fromlist", mbp_fromlist, METH_VARARGS, "initlize from a list"},
     {"fromrand", mbp_fromrand, METH_VARARGS, "initlize with a random value"},
-    {"tolist", mbp_tolist, METH_VARARGS | METH_KEYWORDS, "dump a matrixbp to a python list in 1d or 2d"},
-    {0}
+    {"tolist", (PyCFunction)(PyCFunctionWithKeywords)mbp_tolist, METH_VARARGS | METH_KEYWORDS, "dump a matrixbp to a python list in 1d or 2d"},
+    {0,0,0,0},
 };
 
 PyTypeObject mbp_py_tpdef = {
