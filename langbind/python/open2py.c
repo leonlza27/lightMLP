@@ -1,175 +1,176 @@
 #include "open2py.h"
 
-PyObject *netstructpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
-    netstruct_py *obnew = (netstruct_py*)tp->tp_alloc(tp, 0);
-    if(!obnew) return 0;
-    obnew->netsrc = 0;
-    obnew->size = 0;
-    return (PyObject*)obnew;
+PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
+    netdefpy *obret = (netdefpy*)tp->tp_alloc(tp, 0);
+    if(!obret) return 0;
+    obret->nstruct = 0;
+    return (PyObject*)obret;
 }
 
-void netstructpy_empty(PyObject *self){
-    netstruct_py *obj = (netstruct_py*)self;
-    if(obj->netsrc) {
-        NetLyrConf *dfree = obj->netsrc;
-        uint32_t size = obj->size;
-        for(uint16_t i = 0; i < size; i++){
-            free(dfree[i].existedBiasData);
-            free(dfree[i].existedWeightData);
+void netdefpy_dealloc(PyObject *self){
+    netdefpy *obj = (netdefpy*)self;
+    if(obj->nstruct){
+        netLyrConf *ndealloc = obj->nstruct;
+        uint32_t lyrcnt = obj->lyrcnt;
+        for(uint32_t i = 0; i < lyrcnt; i++){
+            free(ndealloc[i].weights);
+            free(ndealloc[i].bias);
         }
-        free(dfree);
+        free(ndealloc);
     }
-    obj->netsrc = 0;
-    obj->size = 0;
-    Py_TYPE(obj)->tp_free(obj);
 }
 
-PyObject *netstructpy_swnet(PyObject *self){
-    netstruct_py *obj = (netstruct_py*)self;
-    NetLyrConf *netprint = obj->netsrc;
-    //format: lyr_no. in out acTp dextra
-    uint32_t size = obj->size;
-    char *opt = (char*)malloc((size + 1) * 52);
-    char curlyr[52];
-    opt[0] = 0;
-    sprintf(opt, "lyr_no.|   in  |  out  | acTp | dextra\n");
-    for(uint32_t i = 0; i < size; i++){
-        NetLyrConf *curp = &netprint[i];
-        sprintf(curlyr, "%6d  %6d  %6d  %6d  %.4f\n", i, curp->existedWeightData->cols, curp->existedWeightData->rows, curp->Activetype, qfix_to_float64(curp->dataExtra));
-        strcat(opt, curlyr);
-    }
-    return PyUnicode_FromString(opt);
-}
-
-PyObject *constructnet(PyObject *self, PyObject *args){
+PyObject* buildnet(PyObject *_rtime, PyObject *args){
     PyObject *lstin;
-    if(!PyArg_ParseTuple(args,"O!",&PyList_Type, &lstin)) return 0;
-    size_t size = PyList_GET_SIZE(lstin);
-    if(!size || size > UINT16_MAX){
-        PyErr_SetString(PyExc_ValueError,"incorrect list size: 0 or beyound 65535(max value of unsigned int16)");
+    if(!PyArg_ParseTuple(args, "O!", &PyList_Type, &lstin)) return 0;
+    size_t netsize_p = PyList_GET_SIZE(lstin);
+    if(netsize_p >UINT32_MAX){
+        PyErr_SetString(PyExc_RuntimeError, "Len of list is larger than max of uint32 value");
         return 0;
     }
-    //网络验证
-    for(size_t i = 0; i < size; i++){
-        PyObject *lyrtuple_oncheck = PyList_GetItem(lstin, i);
-        int indi, outdi, actp, extra, outdilast = 0;
-        if(!PyArg_ParseTuple(lyrtuple_oncheck, "iiii", &indi, &outdi, &actp, &extra)) return 0;
-        if(indi < 1 || indi > UINT16_MAX){
-            PyErr_SetString(PyExc_ValueError,"incorrect in_dim(at tuple[0]) value: lower than 1 or beyound 65535(max value of unsigned int16)");
+    uint32_t netsize = netsize_p;
+    //check: input=tuple(indim, outdim, actp, dexa) 
+    int indim_c, outdim_c, outdim_c_last = 0, actp;
+    double dexa;
+    for(uint32_t i = 0; i < netsize; i++){
+        PyObject *cur = PyList_GetItem(lstin, i);
+        if(!PyArg_ParseTuple(cur, "iiid" , &indim_c, &outdim_c, &actp, &dexa)) return 0;
+        if(indim_c < 0 || indim_c > UINT16_MAX){
+            PyErr_Format(PyExc_ValueError,"lstin[%d] indim at tuple[0] requires a uint16 value", i);
             return 0;
         }
-        if(outdilast && indi != outdilast){
-            PyErr_SetString(PyExc_ValueError, "input dim is not equal to the last's output and it is required");
-            return 0;    
-        }
-        if(outdi < 1 || outdi > UINT16_MAX){
-            PyErr_SetString(PyExc_ValueError,"incorrect out_dim(at tuple[1]) value: lower than 1 or beyound 65535(max value of unsigned int16)");
+        if(outdim_c < 0 || outdim_c > UINT16_MAX){
+            PyErr_Format(PyExc_ValueError,"lstin[%d] outdim at tuple[1] requires a uint16 value", i);
             return 0;
         }
+        if(outdim_c_last && indim_c != outdim_c_last){
+            PyErr_Format(PyExc_ValueError,"lstin[%d] indim at tuple[0] not equal to outdim of last", i);
+            return 0;
+        }
+        outdim_c_last = outdim_c;
     }
 
-    //actual allocation
-    netstruct_py *netret = PyObject_New(netstruct_py, &netstructpy_tpdef);
-    netret->size = size;
-    NetLyrConf *netret_data = (NetLyrConf*)malloc(sizeof(NetLyrConf) * size);
-    for(uint16_t i = 0; i < size; i++){
-        PyObject *lyrtuple = PyList_GetItem(lstin, i);
-        int indi, outdi, actp, extra;
-        PyArg_ParseTuple(lyrtuple, "iiii", &indi, &outdi, &actp, &extra);
-        NetLyrConf *_this = &netret_data[i];
-        _this->Activetype = actp;
-        _this->dataExtra = extra;
-        _this->existedBiasData = alloc_matrix_bp(outdi, 1);
-        _this->existedWeightData = alloc_matrix_bp(outdi, indi);
+    // actual initization
+    
+    netdefpy *ret = (netdefpy*)netdefpy_tpdef.tp_alloc(&netdefpy_tpdef, 0);
+    netLyrConf *rdata = (netLyrConf*)malloc(sizeof(netLyrConf) * netsize);
+    uint16_t indim, outdim;
+    for(uint32_t i = 0; i < netsize; i++){
+        PyObject *cur = PyList_GetItem(lstin, i);
+        if(!PyArg_ParseTuple(cur, "HHid" , &indim_c, &outdim_c, &actp, &dexa)) return 0;
+        rdata[i].in_dim = indim;
+        rdata[i].out_dim = outdim;
+        rdata[i].dExtra = float_to_qfix(dexa);
+        rdata[i].acTp = actp;
+        rdata[i].weights = (qfix*)malloc(sizeof(qfix) * indim * outdim);
+        rdata[i].bias = (qfix*)malloc(sizeof(qfix) * outdim);
     }
-    netret->netsrc = netret_data;
-    return (PyObject*)netret;
-}
-
-PyObject *mlptrainerpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
-    netstruct_py *innet;
-    if(!PyArg_ParseTuple(args, "O!", &netstructpy_tpdef, &innet)) return 0;
-    mlptrain2py *ret = (mlptrain2py*)tp->tp_alloc(tp,0);
-    if(!ret) return 0;
-    Py_XINCREF(innet);
-    lmlp_setupTrainer(innet->size, innet->netsrc, &ret->info);
+    
+    ret->lyrcnt = netsize;
+    ret->nstruct = rdata;
     return (PyObject*)ret;
 }
 
-void mlptrainerpy_empty(PyObject *self){
-    mlptrain2py *nfree = (mlptrain2py*)self;
-    lmlp_cleanup_trainer(&nfree->info);
-    Py_XDECREF(nfree->datasrc_py);
-    Py_TYPE(nfree)->tp_free(nfree);
+PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
+    netdefpy *src;
+    if(!PyArg_ParseTuple(args, "O!", &netdefpy_tpdef, &src)) return 0;
+    mlpTrainStatPy *ret = (mlpTrainStatPy*)tp->tp_alloc(tp, 0);
+    mlptrainer_setup(src->lyrcnt, src->nstruct, &ret->statloc);
+    Py_INCREF(src);
+    ret->modelsrc = src;
+    return (PyObject*)ret;
 }
 
-PyObject *mlptrainerpy_execute(PyObject *self, PyObject *args){
-    mlptrain2py *obj = (mlptrain2py*)self;
-    matrixbp_py *inputd, *outd = 0;
-    if(!PyArg_ParseTuple(args, "O!|O!", &mbp_py_tpdef, &inputd, &mbp_py_tpdef, &outd)) return 0;
-    matrix_bp input_data = inputd->info;
-    matrix_bp output_data = outd->info;
-    if(input_data->cols > 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"input\" unexcepted size: not a vector(matrixbp cols must be 1)");
-        return 0;
-    }
-    if(input_data->rows < obj->datasrc_py->netsrc->existedWeightData->cols){
-        PyErr_SetString(PyExc_ValueError, "arg \"input\" unexcepted size: rows of input less than the net required(refer your netdef for initlizing the trainer)");
-        return 0;
-    }
-    uint16_t osize = obj->datasrc_py->netsrc->existedWeightData[obj->datasrc_py->size - 1].rows;
-    if(outd){
-        if(output_data->cols > 1){
-            PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: not a vector(matrixbp cols must be 1)");
-            return 0;
-        }
-        if(output_data->rows < osize){
-            PyErr_SetString(PyExc_ValueError, "arg \"output\" unexcepted size: rows of output less than the net required(refer your netdef for initlizing the trainer)");
-            return 0;
-        }
-    }else{
-        outd = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
-        outd->info = alloc_matrix_bp(osize, 1);
-    }
-    
-    lmlp_trainer_infer(obj->info, input_data);
-    qfix *_infrsu = obj->info.fullConnData[obj->datasrc_py->size]->data, *dst = outd->info->data;
-    for(uint16_t i = 0; i < osize; i++) dst[i] = _infrsu[i];
-
-    return (PyObject*)outd;
+void mlptrainpy_dealloc(PyObject *self){
+    mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
+    mlptrainer_cleanup(&obj->statloc);
+    Py_DECREF(obj->modelsrc);
 }
 
-PyObject *mlptrainerpy_backward(PyObject *self, PyObject *args){
-    matrixbp_py *grad_inital;
-    PyObject *lr_o;
-    if(!PyArg_ParseTuple(args, "O!O!", &mbp_py_tpdef, &grad_inital, &PyFloat_Type, &lr_o)) return 0;
-    mlptrain2py *obj = (mlptrain2py*)self;
-    if(grad_inital->info->cols > 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"grad_inital\" unexcepted size: not a vector(matrixbp cols must be 1)");
-        return 0;
+PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args){    
+    Py_INCREF(self);
+    mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
+    matrixbp_py *vecin, *ret = 0;
+    if(!PyArg_ParseTuple(args, "O!|O!", &mbp_py_tpdef, &vecin, &mbp_py_tpdef, &ret)) goto _err_ret;
+    if(vecin->info->cols != 1){
+        PyErr_SetString(PyExc_ValueError, "arg \"vecin\" not a vector(cols != 1)");
+        goto _err_ret;
     }
-    if(grad_inital->info->rows < obj->datasrc_py->netsrc->existedWeightData[obj->datasrc_py->size - 1].cols){
-        PyErr_SetString(PyExc_ValueError, "arg \"grad_inital\" unexcepted size: rows less than the net required(refer your netdef for initlizing the trainer)");
-        return 0;
+    if(vecin->info->rows < obj->modelsrc->nstruct[0].in_dim){
+        PyErr_SetString(PyExc_ValueError, "arg \"vecin\" rows less than the netdef[0].indim for init the class");
+        goto _err_ret;
     }
-    lmlp_trainer_backward(obj->info, grad_inital, float_to_qfix(PyFloat_AsDouble(lr_o)));
-    Py_RETURN_NONE;
-}
+    uint16_t outdim = obj->modelsrc->nstruct[obj->modelsrc->lyrcnt - 1].out_dim;
+    if(!ret) goto _allocate_mbppy_if_0;
+    if(ret->info->cols != 1){
+        PyErr_SetString(PyExc_ValueError, "arg \"ret\" not a vector(cols != 1)");
+        goto _err_ret;
+    }
+    if(ret->info->rows < outdim){
+        PyErr_SetString(PyExc_ValueError, "arg \"ret\" rows less than the netdef[-1].outdim for init the class");
+        goto _err_ret;
+    }
+    Py_INCREF(ret);
+    goto _actual_exec;
 
-PyMODINIT_FUNC PyInit_libcore(){
-    PyObject *module;
-    if(PyType_Ready(&netstructpy_tpdef) < 0) return 0;
-    if(PyType_Ready(&mlptrainerpy_tpdef) < 0) return 0;
-    module = PyModule_Create(&lightmlp_topy_root);
-    if(module == 0) return 0;
-    PyObject *depency_mbp = PyImport_ImportModule("libmbp16d");
-    if(!depency_mbp) goto _ret_err;
-    if(PyModule_AddObject(module, "matrixbp16d", depency_mbp) < 0) goto _ret_err;
-    if(PyModule_AddObject(module, "netdef", &netstructpy_tpdef) < 0) goto _ret_err;
-    if(PyModule_AddObject(module, "mlptrainer", &mlptrainerpy_tpdef) < 0) goto _ret_err;
-    return module;
+_allocate_mbppy_if_0:
+    ret = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
+    ret->info = alloc_matrix_bp(outdim, 1);
 
-    _ret_err:
-    Py_DECREF(module);
+_actual_exec:
+    mlptrainer_execute(&obj->statloc, vecin->info->data);
+    qfix *resusrc = obj->statloc.fullConnData[obj->modelsrc->lyrcnt], *dest = ret->info->data;
+    for(uint16_t i = 0; i < outdim; i++) dest[i] = resusrc[i];
+    Py_DECREF(self);
+    return (PyObject*)ret;
+
+_err_ret:
+    Py_DECREF(self);
     return 0;
 }
+
+PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args){
+    Py_INCREF(self);
+    mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
+    matrixbp_py *grad0;
+    double lr;
+    if(!PyArg_ParseTuple(args, "O!d", &mbp_py_tpdef, &grad0, &lr)) goto _err_ret;
+    if(grad0->info->cols != 1){
+        PyErr_SetString(PyExc_ValueError, "arg \"grad0\" not a vector(cols != 1)");
+        goto _err_ret;
+    }
+    if(grad0->info->rows < obj->modelsrc->nstruct[obj->modelsrc->lyrcnt - 1].out_dim){
+        PyErr_SetString(PyExc_ValueError, "arg \"grad0\" rows less than the netdef[-1].outdim for init the class");
+        goto _err_ret;
+    }
+
+    mlptrainer_backward(&obj->statloc, grad0->info->data, float_to_qfix(lr));
+
+    Py_DECREF(self);
+    Py_RETURN_NONE;
+
+_err_ret:
+    Py_DECREF(self);
+    return 0;
+}
+
+PyMODINIT_FUNC PyInit_libcorepy(){
+    PyObject *retmodule = 0;
+    if(0 > PyType_Ready(&netdefpy_tpdef)) return 0;
+    if(0 > PyType_Ready(&mlptrainpy_tpdef)) return 0;
+    
+    retmodule = PyModule_Create(&lmlpcore);
+    if(!retmodule) return 0;
+
+    if(PyModule_AddObject(retmodule, "netstruct", (PyObject*)&netdefpy_tpdef) < 0){
+        Py_DECREF(retmodule);
+        return 0;
+    }
+    if(PyModule_AddObject(retmodule, "mlptrain", (PyObject*)&mlptrainpy_tpdef) < 0){
+        Py_DECREF(retmodule);
+        return 0;
+    }
+
+    return retmodule;
+}
+
