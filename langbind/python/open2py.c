@@ -57,7 +57,7 @@ PyObject* buildnet(PyObject *_rtime, PyObject *args){
     uint16_t indim, outdim;
     for(uint32_t i = 0; i < netsize; i++){
         PyObject *cur = PyList_GetItem(lstin, i);
-        if(!PyArg_ParseTuple(cur, "HHid" , &indim_c, &outdim_c, &actp, &dexa)) return 0;
+        if(!PyArg_ParseTuple(cur, "HHid" , &indim, &outdim, &actp, &dexa)) return 0;
         rdata[i].in_dim = indim;
         rdata[i].out_dim = outdim;
         rdata[i].dExtra = float_to_qfix(dexa);
@@ -162,15 +162,32 @@ PyMODINIT_FUNC PyInit_libcorepy(){
     retmodule = PyModule_Create(&lmlpcore);
     if(!retmodule) return 0;
 
-    if(PyModule_AddObject(retmodule, "netstruct", (PyObject*)&netdefpy_tpdef) < 0){
-        Py_DECREF(retmodule);
-        return 0;
-    }
-    if(PyModule_AddObject(retmodule, "mlptrain", (PyObject*)&mlptrainpy_tpdef) < 0){
-        Py_DECREF(retmodule);
-        return 0;
-    }
+    if(PyModule_AddObject(retmodule, "netstruct", (PyObject*)&netdefpy_tpdef) < 0) goto _err_init;
+    if(PyModule_AddObject(retmodule, "mlptrain", (PyObject*)&mlptrainpy_tpdef) < 0)goto _err_init;
+    
+    // constants for register activation type
+    PyObject *actpenum_topy = PyModule_New("actp");
+    if(!actpenum_topy) goto _err_init;
 
+    //add enum fields
+    if(PyModule_AddObject(actpenum_topy, "ReLU", PyLong_FromLong(ac_ReLU)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "ReLU6", PyLong_FromLong(ac_ReLU6)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "LeakyReLU", PyLong_FromLong(ac_LeakyReLU)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "Sigmoid", PyLong_FromLong(ac_Sigmoid)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "Sigmoid_hard", PyLong_FromLong(ac_Sigmoid_hard)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "Tanh", PyLong_FromLong(ac_Tanh)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "Tanh_hard", PyLong_FromLong(ac_Tanh_hard)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "Sign", PyLong_FromLong(ac_Sign)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "Pass", PyLong_FromLong(ac_pass)) < 0) goto _err_init_add_actpenum;
+    
+    //link the enums
+    if(PyModule_AddObject(retmodule, "actp", actpenum_topy) < 0) goto _err_init_add_actpenum;
     return retmodule;
+
+_err_init_add_actpenum:
+    Py_DECREF(actpenum_topy);
+_err_init:
+    Py_DECREF(retmodule);
+    return 0;
 }
 
