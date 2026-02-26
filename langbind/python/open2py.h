@@ -20,11 +20,11 @@ PyTypeObject netdefpy_tpdef = {
     PyVarObject_HEAD_INIT(0, 0)
     .tp_basicsize = sizeof(netdefpy),
     .tp_itemsize = 0,
-    .tp_name = "libcore.netdef",
+    .tp_name = "lightmlpcore_py.netdef",
+    .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = netdefpy_new,
     .tp_dealloc = netdefpy_dealloc,
 };
-
 
 typedef struct mlpTrainStatPy{
     PyObject_HEAD;
@@ -32,10 +32,13 @@ typedef struct mlpTrainStatPy{
     netdefpy *modelsrc;
 }mlpTrainStatPy;
 
+//in python: mlptrain.__init__(netsrc: netdef)
+//same for exec_only one
 PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
 void mlptrainpy_dealloc(PyObject *self);
 
 //in python: mlptrain.execute(vecin: matrixbp)
+//same for exec_only one
 PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args);
 //in python: mlptrain.backward(grad: matrixbp, lr: Float)
 PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args);
@@ -50,10 +53,42 @@ PyTypeObject mlptrainpy_tpdef = {
     PyVarObject_HEAD_INIT(0, 0)
     .tp_basicsize = sizeof(mlpTrainStatPy),
     .tp_itemsize = 0,
-    .tp_name = "mlptrain",
+    .tp_name = "lightmlpcore_py.mlptrain",
+    .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = mlptrainpy_new,
     .tp_dealloc = mlptrainpy_dealloc,
     .tp_methods = mlptrainpy_memberfns,
+};
+
+
+typedef struct mlpExecStatPy{
+    PyObject_HEAD;
+    mlpExecStatus statloc;
+    netdefpy *modelsrc;
+}mlpExecStatPy;
+
+PyObject *mlpexecpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
+void mlpexecpy_dealloc(PyObject *self);
+
+PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args);
+//use mlpexec.__call__() to call the upper func
+PyObject *mlpexecpy_mexecute_opcall(PyObject *self, PyObject *args, PyObject *args_dict);
+
+static PyMethodDef mlpexecpy_memberfns[] = {
+    {"execute", mlpexecpy_mexecute, METH_VARARGS, 0},
+    {0,0,0,0},
+};
+
+PyTypeObject mlpexecpy_tpdef = {
+    PyVarObject_HEAD_INIT(0,0)
+    .tp_basicsize =sizeof(mlpExecStatPy),
+    .tp_itemsize = 0,
+    .tp_name = "lightmlpcore_py.mlpexec",
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = mlpexecpy_new,
+    .tp_dealloc = mlpexecpy_dealloc,
+    .tp_methods = mlpexecpy_memberfns,
+    .tp_call = mlpexecpy_mexecute_opcall,
 };
 
 static PyMethodDef libcorepy_modulefns[] = {
