@@ -32,3 +32,5 @@ for i in range(total_verify):
 
 print(corr/total_verify)
  
+nexec = core.mlpexec(ndef)
+nexec(vecin)

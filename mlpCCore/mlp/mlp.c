@@ -27,7 +27,27 @@ void mlptrainer_cleanup(mlpTrainStatus *net){
     free(net->fullConnData);
     free(net->lyrinput_grad);
     free(net->w_grad);
+    net->modelsrc = 0;
 }
+
+void mlpexec_setup(uint32_t calclyrs ,netLyrConf *net, mlpExecStatus *dest){
+    dest->calclyrs = calclyrs;
+    dest->modelsrc = net;
+    uint16_t outdim_max = 0;
+    for(uint32_t i = 0; i < calclyrs; i++){
+        uint16_t outdim = net[i].out_dim;
+        if(outdim > outdim_max) outdim_max = outdim;
+    }
+    dest->fullConnData_tmp[0] = (qfix*)malloc(sizeof(qfix*) * outdim_max);
+    dest->fullConnData_tmp[1] = (qfix*)malloc(sizeof(qfix*) * outdim_max);
+}
+
+void mlpexec_cleanup(mlpExecStatus *net){
+    free(net->fullConnData_tmp[0]);
+    free(net->fullConnData_tmp[1]);
+    net->modelsrc = 0;
+}
+
 
 void mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr){
     uint32_t size = model->calclyrs;
@@ -92,6 +112,61 @@ void mlptrainer_execute(mlpTrainStatus *model, qfix *arrin){
     for(uint32_t i = 0; i < size; i++){
         qfix *in = fcd_export[i];
         qfix *out = fcd_export[i + 1];
+        qfix *wcur = nsrc->weights;
+        qfix *bcur = nsrc->bias;
+        qfix dext = nsrc->dExtra;
+
+        uint16_t indi = nsrc->in_dim;
+        uint16_t outdi = nsrc->out_dim;
+
+        switch(nsrc->acTp){
+            case ac_ReLU: acfn = ReLU; break;
+            case ac_ReLU6: acfn = ReLu6; break;;
+            case ac_LeakyReLU: acfn = LeakyReLU; break;
+            case ac_Sigmoid: acfn = Sigmoid; break;
+            case ac_Sigmoid_hard: acfn = SigmoidH; break;
+            case ac_Tanh: acfn = Tanh; break;
+            case ac_Tanh_hard: acfn = TanhH; break;
+            case ac_Sign: acfn = Sign; break;
+            case ac_pass:
+            default: acfn = linear; break;
+        }
+
+        qfix *wcurr = wcur;
+        for(uint16_t ii = 0; ii < outdi; ii++){
+            _tmp_larger sumw = 0;
+            for(uint16_t j = 0; j < indi; j++){
+                sumw += (_tmp_larger)(*wcurr) * *in;
+                wcurr++;
+                in++;
+            }
+            *out = acfn((sumw >> QSHIFT) + *bcur, dext);
+            bcur++;
+            out++;
+            in -= indi;
+        }
+
+        nsrc++;
+    }
+}
+
+void mlpexec_execute(mlpExecStatus *model, qfix *arrin){
+    uint32_t size = model->calclyrs;
+    netLyrConf *nsrc = model->modelsrc;
+    qfix** fcd_export = model->fullConnData_tmp;
+    acCall acfn;
+    uint32_t i = 0;
+    qfix *in, *out;
+    goto _lyr0;
+    for(; i < size; i++){
+        goto _lyroth;
+    _lyr0:
+        in = arrin;
+        goto _norm_exec;
+    _lyroth:
+        in = fcd_export[i%2];
+    _norm_exec:
+        out = fcd_export[(i + 1)%2];
         qfix *wcur = nsrc->weights;
         qfix *bcur = nsrc->bias;
         qfix dext = nsrc->dExtra;
