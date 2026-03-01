@@ -1,4 +1,5 @@
 #include "open2py.h"
+#include "../../mlpCCore/mlp/filedump.h"
 
 PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
     netdefpy *obret = (netdefpy*)tp->tp_alloc(tp, 0);
@@ -69,6 +70,79 @@ PyObject* buildnet(PyObject *_rtime, PyObject *args){
     ret->lyrcnt = netsize;
     ret->nstruct = rdata;
     return (PyObject*)ret;
+}
+
+PyObject *dumpmodel_frompy(PyObject *_rtime, PyObject *args, PyObject *args_dict){
+    const char *dicargs[] = {"modelsrc", "filename", "filetype", "exposemrk", 0};
+    char *filetype = 0, *exposemrk = 0;
+    netdefpy *modelsrc;
+    char *filename;
+    int ret;
+    if(!PyArg_ParseTupleAndKeywords(args, args_dict, "O!s|ss", dicargs, &netdefpy_tpdef, &modelsrc, &filename, &filetype, &exposemrk)) return 0;
+    if(filetype) goto _export_othftype;
+
+_save_as_bin:
+    ret = savemodel(filename, modelsrc->lyrcnt, modelsrc->nstruct);
+    goto _io_stat_check;
+_export_othftype:
+    if(strcmp(filetype, "bin") == 0) goto _save_as_bin;
+    if(!exposemrk || exposemrk[0] == 0){
+        PyErr_SetString(PyExc_ValueError, "arg \"exposemrk\" must a non-empty string");
+        return 0;
+    }
+    //check exposemrk
+    //for dump as any source code
+    
+    if(exposemrk[0] >= '0' && exposemrk[0] <= '9') goto _str_not_suit_for_srccode_value;
+
+    char exposemrk_cverify = exposemrk[1];
+    size_t i = 1;
+    do{
+        if((exposemrk_cverify == '_') || (exposemrk_cverify >= '0' && exposemrk_cverify <= '9') || (exposemrk_cverify >= 'A' && exposemrk_cverify <= 'Z') || (exposemrk_cverify >= 'a' || exposemrk_cverify <= 'z')){
+            i++;
+            exposemrk_cverify = exposemrk[i];
+        }
+        else{
+        _str_not_suit_for_srccode_value:
+            PyErr_SetString(PyExc_ValueError, "arg \"exposemrk\" string not suitable for naming a value of model exposed to any type of source code");
+            return 0;
+        }
+    }while (exposemrk_cverify);
+
+    if(strcmp(exposemrk, "csrc") == 0){
+        ret = dump_asCHeader(filename, exposemrk, modelsrc->lyrcnt, modelsrc->nstruct);
+        goto _io_stat_check;
+    }
+
+    PyErr_SetString(PyExc_ValueError, "arg \"filetype\" not supported type");
+    return 0;
+
+_io_stat_check:
+    switch(ret){
+        case lmlp_DUMPBINHEADER_ERR:
+            PyErr_SetString(PyExc_RuntimeError, "Tried to write bin header but failed");
+            return 0;
+        case lmlp_FILENOTEXIST:
+            PyErr_SetString(PyExc_OSError, "Destnaion file cannot open or create");
+            return 0;
+        case lmlp_DUMPINFOD_ERR:
+            PyErr_SetString(PyExc_RuntimeError, "Cannot save lyrinfo of some layer, please check and re-try");
+            return 0;
+        case lmlp_LOADINFOW_ERR:
+            PyErr_SetString(PyExc_RuntimeError, "Cannot save weights of some layer, please check and re-try");
+            return 0;
+        case lmlp_DUMPINFOB_ERR:
+            PyErr_SetString(PyExc_RuntimeError, "Cannot save bias of some layer, please check and re-try");
+            return 0;
+        case lmlp_WRITESRCCODEVDEF_ERR:
+            PyErr_SetString(PyExc_RuntimeError, "Cannot generate final 'netLyrConf' array defination in source code");
+            return 0;
+        case lmlp_WRITESRCCODESTR_ERR:
+            PyErr_SetString(PyExc_RuntimeError, "Cannot dump str(or additional info) to source code");
+            return 0;
+        default:
+            Py_RETURN_NONE;
+    }
 }
 
 PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){

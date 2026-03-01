@@ -16,6 +16,8 @@
 #define lmlp_FILENOTEXIST -8        // contains file not exist in read-only mode or file creation failed with write mode
 #define lmlp_FILEVERIFY_FAIL -9
 #define lmlp_LOADFILEINFO_ERR -10
+#define lmlp_WRITESRCCODESTR_ERR -11
+#define lmlp_WRITESRCCODEVDEF_ERR -12
 
 //layout: [in_dim][out_dim][dExa][acTp][weights][bias]
 #pragma pack(push,4)
