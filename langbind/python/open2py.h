@@ -16,6 +16,13 @@ void netdefpy_dealloc(PyObject *self);
 
 PyObject *buildnet(PyObject *_rtime, PyObject *args);
 
+//dict contains kwd: filetype, exposemrk
+//norm_args: modelsrc, filename
+//bin as default
+PyObject *dumpmodel_frompy(PyObject *_rtime, PyObject *args, PyObject *args_dict);
+
+PyObject *load_frombin(PyObject *_rtime, PyObject *args);
+
 PyTypeObject netdefpy_tpdef = {
     PyVarObject_HEAD_INIT(0, 0)
     .tp_basicsize = sizeof(netdefpy),
@@ -93,6 +100,8 @@ PyTypeObject mlpexecpy_tpdef = {
 
 static PyMethodDef libcorepy_modulefns[] = {
     {"buildnet", buildnet, METH_VARARGS, "build a net descrption from 0"},
+    {"savemodel", (PyCFunction)(PyCFunctionWithKeywords)dumpmodel_frompy, METH_VARARGS | METH_KEYWORDS, 0},
+    {"loadmodel", load_frombin, METH_VARARGS, 0},
     {0,0,0,0},
 };
 
