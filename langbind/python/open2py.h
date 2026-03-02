@@ -100,6 +100,8 @@ PyTypeObject mlpexecpy_tpdef = {
 
 static PyMethodDef libcorepy_modulefns[] = {
     {"buildnet", buildnet, METH_VARARGS, "build a net descrption from 0"},
+    {"savemodel", (PyCFunction)(PyCFunctionWithKeywords)dumpmodel_frompy, METH_VARARGS | METH_KEYWORDS, 0},
+    {"loadmodel", load_frombin, METH_VARARGS, 0},
     {0,0,0,0},
 };
 

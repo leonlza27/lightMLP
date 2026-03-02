@@ -14,10 +14,14 @@ void netdefpy_dealloc(PyObject *self){
         netLyrConf *ndealloc = obj->nstruct;
         uint32_t lyrcnt = obj->lyrcnt;
         for(uint32_t i = 0; i < lyrcnt; i++){
-            free(ndealloc[i].weights);
-            free(ndealloc[i].bias);
+            netLyrConf *curlyr = &ndealloc[i];
+            if(curlyr->weights) free(curlyr->weights);
+            if(curlyr->bias) free(curlyr->bias);
+            curlyr->weights = 0;
+            curlyr->bias = 0;
         }
         free(ndealloc);
+        obj->nstruct = 0;
     }
 }
 
@@ -73,7 +77,7 @@ PyObject* buildnet(PyObject *_rtime, PyObject *args){
 }
 
 PyObject *dumpmodel_frompy(PyObject *_rtime, PyObject *args, PyObject *args_dict){
-    const char *dicargs[] = {"modelsrc", "filename", "filetype", "exposemrk", 0};
+    char *dicargs[] = {"modelsrc", "filename", "filetype", "exposemrk", 0};
     char *filetype = 0, *exposemrk = 0;
     netdefpy *modelsrc;
     char *filename;
@@ -109,7 +113,7 @@ _export_othftype:
         }
     }while (exposemrk_cverify);
 
-    if(strcmp(exposemrk, "csrc") == 0){
+    if(strcmp(filetype, "csrc") == 0){
         ret = dump_asCHeader(filename, exposemrk, modelsrc->lyrcnt, modelsrc->nstruct);
         goto _io_stat_check;
     }
@@ -143,6 +147,40 @@ _io_stat_check:
         default:
             Py_RETURN_NONE;
     }
+}
+
+PyObject *load_frombin(PyObject *_rtime, PyObject *args){
+    int flag = 0;
+    netLyrConf *netnew;
+    char *filepath;
+    if(!PyArg_ParseTuple(args, "s", &filepath)) return 0;
+    flag = loadmodel(filepath ,&netnew);
+    switch (flag) {
+        case lmlp_FILENOTEXIST:
+            PyErr_SetString(PyExc_OSError, "Source bin file not exist");
+            return 0;
+        case lmlp_FILEVERIFY_FAIL:
+            PyErr_SetString(PyExc_OSError, "file is not the bin format of lightmlp");
+            return 0;
+        case lmlp_LOADINFOD_ERR:
+            PyErr_SetString(PyExc_OSError, "failed to load lyrinfo of some layer");
+            return 0;
+        case lmlp_LOADINFOB_ERR:
+            PyErr_SetString(PyExc_OSError, "failed to load bias of some layer");
+            return 0;
+        case lmlp_LOADINFOW_ERR:
+            PyErr_SetString(PyExc_OSError, "failed to load weights of some layer");
+            return 0;
+        default: break;
+    }
+    netdefpy *ret = PyObject_NEW(netdefpy, &netdefpy_tpdef);
+    if(!ret){
+        PyErr_SetString(PyExc_MemoryError, "try to malloc \"netdef\" but failed");
+        return 0;
+    }
+    ret->lyrcnt = flag;
+    ret->nstruct = netnew;
+    return (PyObject*)ret;
 }
 
 PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){

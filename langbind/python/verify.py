@@ -30,7 +30,13 @@ for i in range(total_verify):
     if(int(resu.tolist()[0] > 0) == excp[0]): 
         corr+=1
 
-print(corr/total_verify)
- 
+#test exec
 nexec = core.mlpexec(ndef)
 nexec(vecin)
+
+#filedump
+core.savemodel(ndef,"test.bin")
+core.savemodel(ndef,"testexport.c",filetype="csrc",exposemrk="mymodel")
+
+#load
+ndef1 = core.loadmodel("test.bin")

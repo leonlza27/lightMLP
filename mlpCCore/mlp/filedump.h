@@ -30,7 +30,7 @@ typedef struct lmlp_model_binlyrheaderdef{
 
 int savemodel(const char *fname ,uint32_t lyrcnt ,const netLyrConf *modelsrc);
 
-int loadmodel(const char *fname, netLyrConf *dstnet);
+int loadmodel(const char *fname, netLyrConf* *dstnet);
 
 int dump_asCHeader(const char *fname, const char *modelname ,uint32_t lyrcnt ,const netLyrConf *modelsrc);
 
