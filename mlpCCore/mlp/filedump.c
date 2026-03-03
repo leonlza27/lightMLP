@@ -1,6 +1,16 @@
 #include "filedump.h"
 #include <stdio.h>
 #include <string.h>
+#include "mlp.h"
+
+//layout: [in_dim][out_dim][dExa][acTp][weights][bias]
+#pragma pack(push,4)
+typedef struct lmlp_model_binlyrheaderdef{
+    uint16_t in_dim, out_dim;
+    qfix dExa;
+    uint8_t acTp;
+}lmlp_model_binlyrheaderdef;
+#pragma pack()
 
 int savemodel(const char *fname ,uint32_t lyrcnt ,const netLyrConf *modelsrc){
     FILE *dest = fopen(fname,"wb");

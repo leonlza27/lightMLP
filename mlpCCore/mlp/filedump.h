@@ -1,9 +1,11 @@
 #ifndef _lmlp_fdump
 #define _lmlp_fdump
 
-#include "mlp.h"
-
 #define lmlpBINMARK "lightmlp_model"
+//in mlp.h, for shared library object independence
+struct _netlyrcnf;
+typedef struct _netlyrcnf netLyrConf;
+#include <stdint.h>
 
 #define lmlp_DUMPBINHEADER_ERR -1
 #define lmlp_DUMPINFOW_ERR -2       //Weights
@@ -18,15 +20,6 @@
 #define lmlp_LOADFILEINFO_ERR -10
 #define lmlp_WRITESRCCODESTR_ERR -11
 #define lmlp_WRITESRCCODEVDEF_ERR -12
-
-//layout: [in_dim][out_dim][dExa][acTp][weights][bias]
-#pragma pack(push,4)
-typedef struct lmlp_model_binlyrheaderdef{
-    uint16_t in_dim, out_dim;
-    qfix dExa;
-    uint8_t acTp;
-}lmlp_model_binlyrheaderdef;
-#pragma pack()
 
 int savemodel(const char *fname ,uint32_t lyrcnt ,const netLyrConf *modelsrc);
 
