@@ -3,3 +3,4 @@
 #and use the cmake script carefully
 
 ADD_SUBDIRECTORY(python)
+ADD_SUBDIRECTORY(java)

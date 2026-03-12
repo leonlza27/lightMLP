@@ -4,3 +4,8 @@ CompileFlags:
       - "-std=c99"
       - "-xc++"
       - "-xc"
+      - "-I/usr/lib/jvm/java-21-openjdk-arm64/include/linux" 
+      - "-I/usr/lib/jvm/java-21-openjdk-arm64/include"
+      - "-I/home/leon27root/code/lightMLP"
+
+    Compiler: [gcc ,g++]
