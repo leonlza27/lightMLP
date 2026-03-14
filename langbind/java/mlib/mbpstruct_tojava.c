@@ -84,4 +84,60 @@ JNIEXPORT void JNICALL Java_mlib_matrixbp_fromrand(JNIEnv *env, jobject _this){
 
 }
 
+JNIEXPORT jfloatArray JNICALL Java_mlib_matrixbp_toarr_1new(JNIEnv *env, jobject _this){
+    jclass mbp_tpdef_java = jnienvcall->FindClass(env,"mlib/matrixbp");
+    jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
+    jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
+    jboolean oncopy = 0;
+    matrix_bp mdata = (matrix_bp)jnienvcall->GetByteArrayElements(env, mbp_data_java, &oncopy);
+    
+    uint32_t size = mdata->cols * mdata->rows;
+    qfix *data = mdata->data;
 
+    jfloatArray ret = jnienvcall->NewFloatArray(env, size);
+    float *dest = jnienvcall->GetFloatArrayElements(env, ret, &oncopy);
+        
+    for(uint32_t i = 0; i < size; i++) dest[i] = qfix_to_float(data[i]);
+
+    jnienvcall->ReleaseFloatArrayElements(env, ret, dest, 0);
+    return ret;
+}
+
+JNIEXPORT void JNICALL Java_mlib_matrixbp_toarr_1cpy(JNIEnv *env, jobject _this, jfloatArray dest_jobj){
+    jclass mbp_tpdef_java = jnienvcall->FindClass(env,"mlib/matrixbp");
+    jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
+    jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
+    jboolean oncopy = 0;
+    matrix_bp mdata = (matrix_bp)jnienvcall->GetByteArrayElements(env, mbp_data_java, &oncopy);
+    uint32_t size = mdata->cols * mdata->rows;
+    uint32_t size_ofin = jnienvcall->GetArrayLength(env, dest_jobj);
+    if(size_ofin < size){
+        jnienvcall->ThrowNew(env,jnienvcall->FindClass(env, "java/lang/IllegalArgumentException"),"len of input list is less than this matrixbp required");
+        return;
+    }
+
+    qfix *data = mdata->data;
+    float *dest = jnienvcall->GetFloatArrayElements(env, dest_jobj, &oncopy);
+
+    for(uint32_t i = 0; i < size; i++) dest[i] = qfix_to_float(data[i]);
+
+    jnienvcall->ReleaseFloatArrayElements(env, dest_jobj, dest, 0);
+}
+
+JNIEXPORT jint JNICALL Java_mlib_matrixbp_rows(JNIEnv *env, jobject _this){
+    jclass mbp_tpdef_java = jnienvcall->FindClass(env,"mlib/matrixbp");
+    jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
+    jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
+    jboolean oncopy = 0;
+    matrix_bp mdata = (matrix_bp)jnienvcall->GetByteArrayElements(env, mbp_data_java, &oncopy);
+    return mdata->rows;
+}
+
+JNIEXPORT jint JNICALL Java_mlib_matrixbp_cols(JNIEnv *env, jobject _this){
+    jclass mbp_tpdef_java = jnienvcall->FindClass(env,"mlib/matrixbp");
+    jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
+    jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
+    jboolean oncopy = 0;
+    matrix_bp mdata = (matrix_bp)jnienvcall->GetByteArrayElements(env, mbp_data_java, &oncopy);
+    return mdata->cols;
+}
