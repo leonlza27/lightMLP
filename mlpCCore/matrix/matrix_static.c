@@ -176,6 +176,9 @@ matrix_bp alloc_matrix_bp(uint16_t m, uint16_t n){
     matrix_bp ret = (matrix_bp)malloc(sizeof(matrix_bp_data) + m * n * sizeof(qfix));
     ret->rows = m;
     ret->cols = n;
+#ifdef MBP_SAFE
+    ret->bufcap = m * n;
+#endif
     return ret;
 }
 

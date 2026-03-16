@@ -3,7 +3,9 @@
 
 #include <python3.13/Python.h>
 #include "../../mlpCCore/mlp/mlp.h"
-#include "matrixbp2py.h"
+//#include "matrixbp2py.h"
+struct _mbp_topy;
+typedef struct _mbp_topy matrixbp_py;
 
 typedef struct netdefpy{
     PyObject_HEAD;

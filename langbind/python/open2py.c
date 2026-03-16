@@ -1,5 +1,6 @@
 #include "open2py.h"
 #include "../../mlpCCore/mlp/filedump.h"
+#include "matrixbp2py.h"
 
 PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
     netdefpy *obret = (netdefpy*)tp->tp_alloc(tp, 0);
