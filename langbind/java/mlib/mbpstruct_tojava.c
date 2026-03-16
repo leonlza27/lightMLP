@@ -39,6 +39,7 @@ JNIEXPORT jstring JNICALL Java_mlib_matrixbp_printmatrix(JNIEnv *env, jobject _t
         putc('|', stdout);
         putc('\n', stdout);
     }
+    jnienvcall->ReleaseByteArrayElements(env, mbp_data_java, (jbyte*)dpnt, 0);
 
     return jnienvcall->NewStringUTF(env, "\n");
 }
@@ -100,6 +101,7 @@ JNIEXPORT jfloatArray JNICALL Java_mlib_matrixbp_toarr_1new(JNIEnv *env, jobject
     for(uint32_t i = 0; i < size; i++) dest[i] = qfix_to_float(data[i]);
 
     jnienvcall->ReleaseFloatArrayElements(env, ret, dest, 0);
+    jnienvcall->ReleaseByteArrayElements(env, mbp_data_java, (jbyte*)mdata, 0);
     return ret;
 }
 
@@ -122,6 +124,7 @@ JNIEXPORT void JNICALL Java_mlib_matrixbp_toarr_1cpy(JNIEnv *env, jobject _this,
     for(uint32_t i = 0; i < size; i++) dest[i] = qfix_to_float(data[i]);
 
     jnienvcall->ReleaseFloatArrayElements(env, dest_jobj, dest, 0);
+    jnienvcall->ReleaseByteArrayElements(env, mbp_data_java, (jbyte*)mdata, 0);
 }
 
 JNIEXPORT jint JNICALL Java_mlib_matrixbp_rows(JNIEnv *env, jobject _this){
@@ -130,7 +133,9 @@ JNIEXPORT jint JNICALL Java_mlib_matrixbp_rows(JNIEnv *env, jobject _this){
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;
     matrix_bp mdata = (matrix_bp)jnienvcall->GetByteArrayElements(env, mbp_data_java, &oncopy);
-    return mdata->rows;
+    uint16_t ret = mdata->rows;
+    jnienvcall->ReleaseByteArrayElements(env, mbp_data_java, (jbyte*)mdata, 0);
+    return ret;
 }
 
 JNIEXPORT jint JNICALL Java_mlib_matrixbp_cols(JNIEnv *env, jobject _this){
@@ -139,5 +144,7 @@ JNIEXPORT jint JNICALL Java_mlib_matrixbp_cols(JNIEnv *env, jobject _this){
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;
     matrix_bp mdata = (matrix_bp)jnienvcall->GetByteArrayElements(env, mbp_data_java, &oncopy);
-    return mdata->cols;
+    uint16_t ret = mdata->cols;
+    jnienvcall->ReleaseByteArrayElements(env, mbp_data_java, (jbyte*)mdata, 0);
+    return ret;
 }

@@ -15,6 +15,9 @@ enum plotFlags{
 #pragma pack(push, 1)
 typedef struct matrix_bp_data{
     uint16_t rows/*行数*/,cols/*列数*/;
+#ifdef MBP_SAFE
+    uint32_t bufcap;
+#endif
     bp data[];//行优先展开
 }matrix_bp_data,*matrix_bp, *matrix_qfix;
 #pragma pack(pop)

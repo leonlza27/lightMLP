@@ -4,23 +4,7 @@ public class matrixbp{
     private byte []data;
 
     static{
-        System.loadLibrary("mbp_tpdef_java");
-    }
-
-    private native void setupmbp(int r, int c);
-    private native String printmatrix();
-
-    public matrixbp(int r, int c){
-        setupmbp(r, c);
-    }
-
-    package mlib;
-
-public class matrixbp{
-    private byte []data;
-
-    static{
-        System.loadLibrary("mbp_tpdef_java");
+        System.loadLibrary("mbp_tojava");
     }
 
     private native void setupmbp(int r, int c);
@@ -38,15 +22,6 @@ public class matrixbp{
     
     public native int rows();
     public native int cols();
-
-    @Override
-    public String toString(){
-        return printmatrix();
-    }
-
-}
-    
-    
 
     @Override
     public String toString(){

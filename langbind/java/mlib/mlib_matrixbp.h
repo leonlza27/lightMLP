@@ -41,19 +41,19 @@ JNIEXPORT void JNICALL Java_mlib_matrixbp_fromrand
 
 /*
  * Class:     mlib_matrixbp
- * Method:    toarr_new
- * Signature: ()[F
- */
-JNIEXPORT jfloatArray JNICALL Java_mlib_matrixbp_toarr_1new
-  (JNIEnv *, jobject);
-
-/*
- * Class:     mlib_matrixbp
  * Method:    toarr_cpy
  * Signature: ([F)V
  */
 JNIEXPORT void JNICALL Java_mlib_matrixbp_toarr_1cpy
   (JNIEnv *, jobject, jfloatArray);
+
+/*
+ * Class:     mlib_matrixbp
+ * Method:    toarr_new
+ * Signature: ()[F
+ */
+JNIEXPORT jfloatArray JNICALL Java_mlib_matrixbp_toarr_1new
+  (JNIEnv *, jobject);
 
 /*
  * Class:     mlib_matrixbp
