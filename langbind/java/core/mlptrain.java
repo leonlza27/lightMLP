@@ -2,7 +2,7 @@ package core;
 import mlib.matrixbp;
 
 public class mlptrain{
-    private netLyrConf []netsrc;
+    private netdef netsrc;
     //these will be handled by native code
     //private byte [][]fullConnData;
     //private byte [][]grad_w;
@@ -13,12 +13,12 @@ public class mlptrain{
         System.loadLibrary("lmlpcore_tojava");
     }
 
-    private native void setuptrainer(netLyrConf []modeldef);
+    private native void setuptrainer(netdef modeldef);
 
     public native void execute(matrixbp in, matrixbp out);
     public native void backward(matrixbp grad0, float lr);
     
-    public mlptrain(netLyrConf []modeldef){
+    public mlptrain(netdef modeldef){
         this.netsrc = modeldef;
         setuptrainer(modeldef);
     }

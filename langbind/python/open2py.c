@@ -186,11 +186,27 @@ PyObject *load_frombin(PyObject *_rtime, PyObject *args){
 
 PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
     netdefpy *src;
-    if(!PyArg_ParseTuple(args, "O!", &netdefpy_tpdef, &src)) return 0;
+    PyObject *flag_gradcontiner;
+    uint16_t cutAndLeaveGrads = 0;
+    char *kwds[] = {"modelsrc", "totalgrad_cap", 0};
+    if(!PyArg_ParseTupleAndKeywords(args, args_dict, "O!|O", kwds, &netdefpy_tpdef, &src, &flag_gradcontiner)) return 0;
+    if((PyBool_Check(flag_gradcontiner) && flag_gradcontiner == Py_True) || (PyLong_Check(flag_gradcontiner) && PyLong_AsInt(flag_gradcontiner)))
+        cutAndLeaveGrads = 1;
+    else{
+        PyErr_SetString(PyExc_TypeError, "arg \"totalgrad_cap\" not a bool (or int)");
+        return 0;
+    }
     mlpTrainStatPy *ret = (mlpTrainStatPy*)tp->tp_alloc(tp, 0);
     mlptrainer_setup(src->lyrcnt, src->nstruct, &ret->statloc);
     Py_INCREF(src);
     ret->modelsrc = src;
+    if(cutAndLeaveGrads){
+        uint32_t size = src->lyrcnt + 1;
+        for(uint32_t i = 0; i < size; i++){
+            free(ret->statloc.fullConnData[i]);
+        }
+        free(ret->statloc.fullConnData);
+    }
     return (PyObject*)ret;
 }
 
@@ -265,6 +281,10 @@ PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args){
 _err_ret:
     Py_DECREF(self);
     return 0;
+}
+
+PyObject mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args){
+
 }
 
 PyObject *mlpexecpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){

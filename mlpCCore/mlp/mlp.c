@@ -17,16 +17,36 @@ void mlptrainer_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
     }
 }
 
+void mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest){
+    dest->calclyrs = calclyrs;
+    dest->modelsrc = net;
+    
+    dest->fullConnData = 0;
+    dest->lyrinput_grad = (qfix**)malloc(sizeof(qfix*) * (calclyrs + 1));
+    dest->w_grad = (qfix**)malloc(sizeof(qfix*) * calclyrs);
+
+    for(uint32_t i = 0; i < calclyrs; i++){
+        uint16_t indim = net[i].in_dim;
+        uint16_t outdim = net[i].out_dim;
+        dest->lyrinput_grad[i] = (qfix*)malloc(sizeof(qfix*) * indim);
+        dest->w_grad[i] = (qfix*)malloc(sizeof(qfix) * indim * outdim);
+    }
+}
+
 void mlptrainer_cleanup(mlpTrainStatus *net){
     uint32_t size = net->calclyrs;
     for(uint32_t i = 0; i < size; i++){
-        free(net->fullConnData[i + 1]);
         free(net->lyrinput_grad[i]);
         free(net->w_grad[i]);
     }
-    free(net->fullConnData);
     free(net->lyrinput_grad);
     free(net->w_grad);
+    if(!net->fullConnData) goto _ret;
+    for(uint32_t i = 0; i < size; i++){
+        free(net->fullConnData[i + 1]);
+    }
+    free(net->fullConnData);
+_ret:
     net->modelsrc = 0;
 }
 
@@ -46,6 +66,25 @@ void mlpexec_cleanup(mlpExecStatus *net){
     free(net->fullConnData_tmp[0]);
     free(net->fullConnData_tmp[1]);
     net->modelsrc = 0;
+}
+
+
+void mlptrainer_totalgrads_savegrads(mlpTrainStatus *net_or_gradcap, mlpTrainStatus *gradscap_dest){
+    uint32_t size = net_or_gradcap->calclyrs;
+    netLyrConf *nsrc = net_or_gradcap->modelsrc;
+    for(uint32_t i = 0; i < size; i++){
+        uint16_t outdi = nsrc->out_dim;
+        uint32_t wsize = nsrc->in_dim * outdi;
+        qfix *bgrad_src = net_or_gradcap->lyrinput_grad[i];
+        qfix *wgrad_src = net_or_gradcap->w_grad[i];
+        qfix *bgrad_dst = gradscap_dest->lyrinput_grad[i];
+        qfix *wgrad_dst = gradscap_dest->w_grad[i];
+
+        for(uint16_t i_ = 0; i_ < outdi; i_++) bgrad_dst[i_] += bgrad_src[i_];
+        for(uint32_t i_ = 0; i_ < wsize; i_++) wgrad_dst[i_] += wgrad_src[i_];
+
+        nsrc++;
+    }
 }
 
 
@@ -100,6 +139,24 @@ void mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr){
         for(uint32_t i = 0; i < wsize; i++) wcur[i] += qfix_mul(lr, wgrad_cur[i]);
 
         nsrc--;
+    }
+}
+
+void mlptrainer_totalgrads_backward(mlpTrainStatus *model, mlpTrainStatus *gradscap, qfix lr){
+    uint32_t size = model->calclyrs;
+    netLyrConf *nsrc = model->modelsrc;
+    for(uint32_t i = 0; i < size; i++){
+        uint16_t outdi = nsrc->out_dim;
+        uint32_t wsize = nsrc->in_dim * outdi;
+        qfix *bgrad_src = gradscap->lyrinput_grad[i];
+        qfix *wgrad_src = gradscap->w_grad[i];
+        qfix *b_dst = nsrc->bias;
+        qfix *w_dst = nsrc->weights;
+
+        for(uint16_t i_ = 0; i_ < outdi; i_++) b_dst[i_] += qfix_mul(bgrad_src[i_], lr);
+        for(uint32_t i_ = 0; i_ < wsize; i_++) w_dst[i_] += qfix_mul(wgrad_src[i_], lr);
+
+        nsrc++;
     }
 }
 

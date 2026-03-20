@@ -58,6 +58,8 @@ static PyMethodDef mlptrainpy_memberfns[] = {
     {0,0,0,0},
 };
 
+PyObject mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args);
+
 PyTypeObject mlptrainpy_tpdef = {
     PyVarObject_HEAD_INIT(0, 0)
     .tp_basicsize = sizeof(mlpTrainStatPy),

@@ -25,9 +25,13 @@ typedef struct _mlp_exec_status{
 }mlpExecStatus;
 
 void mlptrainer_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest);
+void mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest);
 void mlptrainer_cleanup(mlpTrainStatus *net);
 
+void mlptrainer_totalgrads_savegrads(mlpTrainStatus *net_or_gradcap, mlpTrainStatus *gradscap_dest);
+
 void mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr);
+void mlptrainer_totalgrads_backward(mlpTrainStatus *model, mlpTrainStatus *gradscap, qfix lr);
 void mlptrainer_execute(mlpTrainStatus *model, qfix *arrin);
 
 void mlpexec_setup(uint32_t calclyrs ,netLyrConf *net, mlpExecStatus *dest);

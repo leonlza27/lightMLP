@@ -1,8 +1,8 @@
 package core;
 import mlib.matrixbp;
 
-public class mlptrain{
-    private netLyrConf []netsrc;
+public class mlpexec{
+    private netdef netsrc;
     //this will be handled by native code
     //private byte [][]fullConnData;
     private int exec_exahandle;
@@ -11,11 +11,11 @@ public class mlptrain{
         System.loadLibrary("lmlpcore_tojava");
     }
 
-    private native void setupexec(netLyrConf []modeldef);
+    private native void setupexec(netdef modeldef);
 
     public native void execute(matrixbp in, matrixbp out);
     
-    public mlpexec(netLyrConf []modeldef){
+    public mlpexec(netdef modeldef){
         this.netsrc = modeldef;
         setupexec(modeldef);
     }
