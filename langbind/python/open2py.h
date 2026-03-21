@@ -41,8 +41,8 @@ typedef struct mlpTrainStatPy{
     netdefpy *modelsrc;
 }mlpTrainStatPy;
 
-//in python: mlptrain.__init__(netsrc: netdef)
-//same for exec_only one
+//in python: mlptrain.__init__(netsrc: netdef, **kwargs[<optional> totalgrad_cap: bool | int])
+//same for exec_only one, without kwargs
 PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
 void mlptrainpy_dealloc(PyObject *self);
 
@@ -52,13 +52,17 @@ PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args);
 //in python: mlptrain.backward(grad: matrixbp, lr: Float)
 PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args);
 
+PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args);
+
 static PyMethodDef mlptrainpy_memberfns[] = {
     {"execute", mlptrainpy_mexecute, METH_VARARGS, 0},
     {"backward", mlptrainpy_mbackward, METH_VARARGS, 0},
+    {"finalgrads", mlptrainpy_mgetfinalgrads, METH_VARARGS, 0},
     {0,0,0,0},
 };
 
-PyObject mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args);
+//in python: core.savegrads(model_or_totalgrads: mlptrain, dest_totalgrads_cap: mlptrain)
+PyObject *mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args);
 
 PyTypeObject mlptrainpy_tpdef = {
     PyVarObject_HEAD_INIT(0, 0)
@@ -106,6 +110,7 @@ static PyMethodDef libcorepy_modulefns[] = {
     {"buildnet", buildnet, METH_VARARGS, "build a net descrption from 0"},
     {"savemodel", (PyCFunction)(PyCFunctionWithKeywords)dumpmodel_frompy, METH_VARARGS | METH_KEYWORDS, 0},
     {"loadmodel", load_frombin, METH_VARARGS, 0},
+    {"savegrads", mlptrainpy_totalgrads_savegrads, METH_VARARGS, "save totalgrads for data parral training, with a mlptrain object to store total grads"},
     {0,0,0,0},
 };
 
