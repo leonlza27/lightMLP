@@ -2,6 +2,7 @@ package core;
 
 public class netdef{
     private long _addr;
+    private int netlen;
     
     static{
         System.loadLibrary("lmlpcore_tojava");
