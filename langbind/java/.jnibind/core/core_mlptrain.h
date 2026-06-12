@@ -17,6 +17,14 @@ JNIEXPORT void JNICALL Java_core_mlptrain_setuptrainer
 
 /*
  * Class:     core_mlptrain
+ * Method:    dealloctrainer
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_core_mlptrain_dealloctrainer
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     core_mlptrain
  * Method:    execute
  * Signature: (Lmlib/matrixbp;Lmlib/matrixbp;)V
  */
@@ -30,6 +38,14 @@ JNIEXPORT void JNICALL Java_core_mlptrain_execute
  */
 JNIEXPORT void JNICALL Java_core_mlptrain_backward
   (JNIEnv *, jobject, jobject, jfloat);
+
+/*
+ * Class:     core_mlptrain
+ * Method:    get_grad2last
+ * Signature: (Lmlib/matrixbp;)V
+ */
+JNIEXPORT void JNICALL Java_core_mlptrain_get_1grad2last
+  (JNIEnv *, jobject, jobject);
 
 #ifdef __cplusplus
 }

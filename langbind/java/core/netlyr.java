@@ -1,23 +1,22 @@
 package core;
 
-enum actp{
-    ac_ReLU         ,
-    ac_ReLU6        ,
-    ac_LeakyReLU    ,
-    ac_Sigmoid      ,
-    ac_Sigmoid_hard ,
-    ac_Tanh         ,
-    ac_Tanh_hard    ,
-    ac_Sign         ,
-    ac_pass         ,
-};
-
-
 public class netlyr{
     private int indim;
     private int outdim;
     private byte _actp;
     private float dexa;
+
+    enum actp{
+        ac_ReLU         ,
+        ac_ReLU6        ,
+        ac_LeakyReLU    ,
+        ac_Sigmoid      ,
+        ac_Sigmoid_hard ,
+        ac_Tanh         ,
+        ac_Tanh_hard    ,
+        ac_Sign         ,
+        ac_pass         ,
+    };
 
     public netlyr(int indim, int outdim, actp ac_type, float dexa){
         this.indim = indim;

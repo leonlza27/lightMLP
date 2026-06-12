@@ -1,7 +1,7 @@
 #ifndef _mlpccore_pyapi
 #define _mlpccore_pyapi
 
-#include <python3.13/Python.h>
+#include <Python.h>
 #include "../../mlpCCore/mlp/mlp.h"
 //#include "matrixbp2py.h"
 struct _mbp_topy;

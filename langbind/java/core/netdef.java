@@ -8,9 +8,12 @@ public class netdef{
         System.loadLibrary("lmlpcore_tojava");
     }
 
-    private native void setup_ndef(netlyr []modeldef);
+    public native void setup_ndef(netlyr []modeldef);
 
-    public netdef(netlyr []modeldef){
-        setup_ndef(modeldef);
-    }
+    public native void setup_fromfile(String fpath);
+
+    public native void freemodel();
+
+    public native void savemodel(String fpath);
+
 }

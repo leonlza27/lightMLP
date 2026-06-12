@@ -1,5 +1,6 @@
 #include "open2py.h"
 #include "../../mlpCCore/mlp/filedump.h"
+#include "longobject.h"
 #include "matrixbp2py.h"
 
 PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
@@ -191,7 +192,7 @@ PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
     mlpTrainStatPy *ret = (mlpTrainStatPy*)tp->tp_alloc(tp, 0);
     if(!PyArg_ParseTupleAndKeywords(args, args_dict, "O!|O", kwds, &netdefpy_tpdef, &src, &flag_gradcontiner)) return 0;
     if(!flag_gradcontiner) mlptrainer_setup(src->lyrcnt, src->nstruct, &ret->statloc);
-    else if((PyBool_Check(flag_gradcontiner) && flag_gradcontiner == Py_True) || (PyLong_Check(flag_gradcontiner) && PyLong_AsInt(flag_gradcontiner)))
+    else if((PyBool_Check(flag_gradcontiner) && flag_gradcontiner == Py_True) || (PyLong_Check(flag_gradcontiner) && PyLong_AsLong(flag_gradcontiner)))
         mlptrainer_totalgrads_cap_setup(src->lyrcnt, src->nstruct, &ret->statloc);
     else{
         PyErr_SetString(PyExc_TypeError, "arg \"totalgrad_cap\" not a bool (or int)");

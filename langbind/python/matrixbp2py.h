@@ -1,6 +1,6 @@
 #ifndef _matrixbp2py
 #define _matrixbp2py
-#include <python3.13/Python.h>
+#include <Python.h>
 #include "../../mlpCCore/matrix/matrix_static.h"
 
 typedef struct _mbp_topy{

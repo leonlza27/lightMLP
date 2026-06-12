@@ -15,6 +15,30 @@ extern "C" {
 JNIEXPORT void JNICALL Java_core_netdef_setup_1ndef
   (JNIEnv *, jobject, jobjectArray);
 
+/*
+ * Class:     core_netdef
+ * Method:    setup_fromfile
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_core_netdef_setup_1fromfile
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     core_netdef
+ * Method:    freemodel
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_core_netdef_freemodel
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     core_netdef
+ * Method:    savemodel
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_core_netdef_savemodel
+  (JNIEnv *, jobject, jstring);
+
 #ifdef __cplusplus
 }
 #endif

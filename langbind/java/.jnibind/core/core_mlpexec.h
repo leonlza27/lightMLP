@@ -23,6 +23,14 @@ JNIEXPORT void JNICALL Java_core_mlpexec_setupexec
 JNIEXPORT void JNICALL Java_core_mlpexec_execute
   (JNIEnv *, jobject, jobject, jobject);
 
+/*
+ * Class:     core_mlpexec
+ * Method:    deallocexec
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_core_mlpexec_deallocexec
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
