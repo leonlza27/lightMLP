@@ -1,4 +1,5 @@
 #include "matrix_static.h"
+#define forced_sigle_thread
 #include "../tools/mult_proc.h"
 
 typedef struct dExchange{

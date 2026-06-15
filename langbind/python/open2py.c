@@ -1,7 +1,12 @@
 #include "open2py.h"
 #include "../../mlpCCore/mlp/filedump.h"
-#include "longobject.h"
-#include "matrixbp2py.h"
+#include "import.h"
+#include "mbpbuffer.h"
+#include "object.h"
+#include "pyerrors.h"
+#include "pytypedefs.h"
+
+PyTypeObject *_mbp_tpdef;
 
 PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
     netdefpy *obret = (netdefpy*)tp->tp_alloc(tp, 0);
@@ -212,7 +217,7 @@ void mlptrainpy_dealloc(PyObject *self){
 PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args){    
     mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
     matrixbp_py *vecin, *ret = 0;
-    if(!PyArg_ParseTuple(args, "O!|O!", &mbp_py_tpdef, &vecin, &mbp_py_tpdef, &ret)) goto _err_ret;
+    if(!PyArg_ParseTuple(args, "O!|O!", _mbp_tpdef, &vecin, _mbp_tpdef, &ret)) goto _err_ret;
     if(vecin->info->cols != 1){
         PyErr_SetString(PyExc_ValueError, "arg \"vecin\" not a vector(cols != 1)");
         goto _err_ret;
@@ -235,7 +240,7 @@ PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args){
     goto _actual_exec;
 
 _allocate_mbppy_if_0:
-    ret = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
+    ret = PyObject_NEW(matrixbp_py, _mbp_tpdef);
     ret->info = alloc_matrix_bp(outdim, 1);
 
 _actual_exec:
@@ -254,7 +259,7 @@ PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args){
     mlpTrainStatPy *gradscap;
     double lr;
     if(!PyArg_ParseTuple(args, "Od", &grad0, &lr)) goto _err_ret;
-    if(!Py_IS_TYPE(grad0, &mbp_py_tpdef)) goto _total_grad_backward;
+    if(!Py_IS_TYPE(grad0, _mbp_tpdef)) goto _total_grad_backward;
     if(grad0->info->cols != 1){
         PyErr_SetString(PyExc_ValueError, "arg \"grad0\" not a vector(cols != 1)");
         goto _err_ret;
@@ -285,7 +290,7 @@ PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args){
     mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
     matrixbp_py *ret = 0;
     qfix *datadst, *grad_final;
-    if(!PyArg_ParseTuple(args, "|O!", &mbp_py_tpdef, &ret)) goto _err_ret;
+    if(!PyArg_ParseTuple(args, "|O!", _mbp_tpdef, &ret)) goto _err_ret;
     uint16_t indim = obj->modelsrc->nstruct[0].in_dim;
     if(!ret) goto _allocate_mbppy_if_0;
     if(ret->info->cols != 1){
@@ -300,7 +305,7 @@ PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args){
     goto _actual_exec;
 
 _allocate_mbppy_if_0:
-    ret = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
+    ret = PyObject_NEW(matrixbp_py, _mbp_tpdef);
     ret->info = alloc_matrix_bp(indim, 1);
 
 _actual_exec:
@@ -340,7 +345,7 @@ void mlpexecpy_dealloc(PyObject *self){
 PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args){    
     mlpExecStatPy *obj = (mlpExecStatPy*)self;
     matrixbp_py *vecin, *ret = 0;
-    if(!PyArg_ParseTuple(args, "O!|O!", &mbp_py_tpdef, &vecin, &mbp_py_tpdef, &ret)) goto _err_ret;
+    if(!PyArg_ParseTuple(args, "O!|O!", _mbp_tpdef, &vecin, _mbp_tpdef, &ret)) goto _err_ret;
     if(vecin->info->cols != 1){
         PyErr_SetString(PyExc_ValueError, "arg \"vecin\" not a vector(cols != 1)");
         goto _err_ret;
@@ -363,7 +368,7 @@ PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args){
     goto _actual_exec;
 
 _allocate_mbppy_if_0:
-    ret = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
+    ret = PyObject_NEW(matrixbp_py, _mbp_tpdef);
     ret->info = alloc_matrix_bp(outdim, 1);
 
 _actual_exec:
@@ -382,6 +387,16 @@ PyObject *mlpexecpy_mexecute_opcall(PyObject *self, PyObject *args, PyObject *ar
 
 PyMODINIT_FUNC PyInit_libcorepy(){
     PyObject *retmodule = 0;
+
+    PyObject *libmbp16 = PyImport_ImportModule("libmbp16d");
+    if(!libmbp16){
+        PyErr_SetString(PyExc_ImportError, "cannot get libmbp16d matrixbp buffer type");
+        return 0;
+    }
+
+    _mbp_tpdef = (PyTypeObject*)PyObject_GetAttrString(libmbp16, "matrixbp");
+    Py_DECREF(libmbp16);
+
     if(0 > PyType_Ready(&netdefpy_tpdef)) return 0;
     if(0 > PyType_Ready(&mlptrainpy_tpdef)) return 0;
     if(0 > PyType_Ready(&mlpexecpy_tpdef)) return 0;

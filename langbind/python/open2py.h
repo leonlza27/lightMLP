@@ -3,27 +3,27 @@
 
 #include <Python.h>
 #include "../../mlpCCore/mlp/mlp.h"
-//#include "matrixbp2py.h"
+
 struct _mbp_topy;
 typedef struct _mbp_topy matrixbp_py;
 
 typedef struct netdefpy{
-    PyObject_HEAD;
+    PyObject_HEAD
     netLyrConf *nstruct;
     uint32_t lyrcnt;
 }netdefpy;
 
-PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
-void netdefpy_dealloc(PyObject *self);
+DLLEXPORT PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
+DLLEXPORT void netdefpy_dealloc(PyObject *self);
 
-PyObject *buildnet(PyObject *_rtime, PyObject *args);
+DLLEXPORT PyObject *buildnet(PyObject *_rtime, PyObject *args);
 
 //dict contains kwd: filetype, exposemrk
 //norm_args: modelsrc, filename
 //bin as default
-PyObject *dumpmodel_frompy(PyObject *_rtime, PyObject *args, PyObject *args_dict);
+DLLEXPORT PyObject *dumpmodel_frompy(PyObject *_rtime, PyObject *args, PyObject *args_dict);
 
-PyObject *load_frombin(PyObject *_rtime, PyObject *args);
+DLLEXPORT PyObject *load_frombin(PyObject *_rtime, PyObject *args);
 
 PyTypeObject netdefpy_tpdef = {
     PyVarObject_HEAD_INIT(0, 0)
@@ -36,23 +36,23 @@ PyTypeObject netdefpy_tpdef = {
 };
 
 typedef struct mlpTrainStatPy{
-    PyObject_HEAD;
+    PyObject_HEAD
     mlpTrainStatus statloc;
     netdefpy *modelsrc;
 }mlpTrainStatPy;
 
 //in python: mlptrain.__init__(netsrc: netdef, **kwargs[<optional> totalgrad_cap: bool | int])
 //same for exec_only one, without kwargs
-PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
-void mlptrainpy_dealloc(PyObject *self);
+DLLEXPORT PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
+DLLEXPORT void mlptrainpy_dealloc(PyObject *self);
 
 //in python: mlptrain.execute(vecin: matrixbp)
 //same for exec_only one
-PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args);
+DLLEXPORT PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args);
 //in python: mlptrain.backward(grad: matrixbp, lr: Float)
-PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args);
+DLLEXPORT PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args);
 
-PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args);
+DLLEXPORT PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args);
 
 static PyMethodDef mlptrainpy_memberfns[] = {
     {"execute", mlptrainpy_mexecute, METH_VARARGS, 0},
@@ -62,7 +62,7 @@ static PyMethodDef mlptrainpy_memberfns[] = {
 };
 
 //in python: core.savegrads(model_or_totalgrads: mlptrain, dest_totalgrads_cap: mlptrain)
-PyObject *mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args);
+DLLEXPORT PyObject *mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args);
 
 PyTypeObject mlptrainpy_tpdef = {
     PyVarObject_HEAD_INIT(0, 0)
@@ -77,17 +77,17 @@ PyTypeObject mlptrainpy_tpdef = {
 
 
 typedef struct mlpExecStatPy{
-    PyObject_HEAD;
+    PyObject_HEAD
     mlpExecStatus statloc;
     netdefpy *modelsrc;
 }mlpExecStatPy;
 
-PyObject *mlpexecpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
-void mlpexecpy_dealloc(PyObject *self);
+DLLEXPORT PyObject *mlpexecpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
+DLLEXPORT void mlpexecpy_dealloc(PyObject *self);
 
-PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args);
+DLLEXPORT PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args);
 //use mlpexec.__call__() to call the upper func
-PyObject *mlpexecpy_mexecute_opcall(PyObject *self, PyObject *args, PyObject *args_dict);
+DLLEXPORT PyObject *mlpexecpy_mexecute_opcall(PyObject *self, PyObject *args, PyObject *args_dict);
 
 static PyMethodDef mlpexecpy_memberfns[] = {
     {"execute", mlpexecpy_mexecute, METH_VARARGS, 0},
@@ -118,8 +118,6 @@ static struct PyModuleDef lmlpcore = {
     PyModuleDef_HEAD_INIT, "libcorepy", 0, 0,
     .m_methods = libcorepy_modulefns,
 };
-
-PyMODINIT_FUNC PyInit_libcorepy();
 
 
 #endif

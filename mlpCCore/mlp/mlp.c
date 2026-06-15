@@ -12,7 +12,7 @@ void mlptrainer_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
         uint16_t indim = net[i].in_dim;
         uint16_t outdim = net[i].out_dim;
         dest->fullConnData[i + 1] = (qfix*)malloc(sizeof(qfix) * outdim);
-        dest->lyrinput_grad[i] = (qfix*)malloc(sizeof(qfix*) * indim);
+        dest->lyrinput_grad[i] = (qfix*)malloc(sizeof(qfix) * indim);
         dest->w_grad[i] = (qfix*)malloc(sizeof(qfix) * indim * outdim);
     }
 }

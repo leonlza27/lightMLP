@@ -30,6 +30,7 @@ for i in range(total_verify):
     if(int(resu.tolist()[0] > 0) == excp[0]): 
         corr+=1
 
+print(corr)
 #test exec
 nexec = core.mlpexec(ndef)
 nexec(vecin)
