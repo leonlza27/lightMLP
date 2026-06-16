@@ -3,20 +3,44 @@
 void mlptrainer_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
     dest->calclyrs = calclyrs;
     dest->modelsrc = net;
-    
-    dest->fullConnData = (qfix**)malloc(sizeof(qfix*) * (calclyrs + 1));
-    dest->lyrinput_grad = (qfix**)malloc(sizeof(qfix*) * (calclyrs + 1));
-    dest->w_grad = (qfix**)malloc(sizeof(qfix*) * calclyrs);
+
+    size_t all_size = (calclyrs * 3 + 2) * sizeof(qfix*);
 
     for(uint32_t i = 0; i < calclyrs; i++){
         uint16_t indim = net[i].in_dim;
         uint16_t outdim = net[i].out_dim;
-        dest->fullConnData[i + 1] = (qfix*)malloc(sizeof(qfix) * outdim);
-        dest->lyrinput_grad[i] = (qfix*)malloc(sizeof(qfix) * indim);
-        dest->w_grad[i] = (qfix*)malloc(sizeof(qfix) * indim * outdim);
+        all_size += (outdim + indim + outdim * indim) * sizeof(qfix);
+    }
+
+    char *fullmem = malloc(all_size);
+    
+    //dest->fullConnData = (qfix**)malloc(sizeof(qfix*) * (calclyrs + 1));
+    //dest->lyrinput_grad = (qfix**)malloc(sizeof(qfix*) * (calclyrs + 1));
+    //dest->w_grad = (qfix**)malloc(sizeof(qfix*) * calclyrs);
+
+    dest->fullConnData = (qfix**)fullmem;
+    fullmem += sizeof(qfix*) * (calclyrs + 1);
+    dest->lyrinput_grad = (qfix**)fullmem;
+    fullmem += sizeof(qfix*) * (calclyrs + 1);
+    dest->w_grad = (qfix**)fullmem;
+    fullmem += sizeof(qfix*) * calclyrs;
+
+    for(uint32_t i = 0; i < calclyrs; i++){
+        uint16_t indim = net[i].in_dim;
+        uint16_t outdim = net[i].out_dim;
+        //dest->fullConnData[i + 1] = (qfix*)malloc(sizeof(qfix) * outdim);
+        //dest->lyrinput_grad[i] = (qfix*)malloc(sizeof(qfix) * indim);
+        //dest->w_grad[i] = (qfix*)malloc(sizeof(qfix) * indim * outdim);
+        dest->fullConnData[i + 1] = (qfix*)fullmem;
+        fullmem += sizeof(qfix) * outdim;
+        dest->lyrinput_grad[i] = (qfix*)fullmem;
+        fullmem += sizeof(qfix) * indim;
+        dest->w_grad[i] = (qfix*)fullmem;
+        fullmem += sizeof(qfix) * indim * outdim;
     }
 }
 
+/*
 void mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest){
     dest->calclyrs = calclyrs;
     dest->modelsrc = net;
@@ -49,7 +73,50 @@ void mlptrainer_cleanup(mlpTrainStatus *net){
 _ret:
     net->modelsrc = 0;
 }
+*/
 
+void mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest){
+    dest->calclyrs = calclyrs;
+    dest->modelsrc = net;
+
+    size_t all_size = (calclyrs * 2 + 1) * sizeof(qfix*);
+
+    for(uint32_t i = 0; i < calclyrs; i++){
+        uint16_t indim = net[i].in_dim;
+        uint16_t outdim = net[i].out_dim;
+        all_size += (indim + outdim * indim) * sizeof(qfix);
+    }
+
+    char *fullmem = malloc(all_size);
+
+    dest->fullConnData = 0;
+    dest->lyrinput_grad = (qfix**)fullmem;
+    fullmem += sizeof(qfix*) * (calclyrs + 1);
+    dest->w_grad = (qfix**)fullmem;
+    fullmem += sizeof(qfix*) * calclyrs;
+
+    for(uint32_t i = 0; i < calclyrs; i++){
+        uint16_t indim = net[i].in_dim;
+        uint16_t outdim = net[i].out_dim;
+        dest->lyrinput_grad[i] = (qfix*)fullmem;
+        fullmem += sizeof(qfix) * indim;
+        dest->w_grad[i] = (qfix*)fullmem;
+        fullmem += sizeof(qfix) * indim * outdim;
+    }
+}
+
+void mlptrainer_cleanup(mlpTrainStatus *net){
+    net->modelsrc = 0;
+    net->calclyrs = 0;
+    if(net->fullConnData){
+        free(net->fullConnData);
+        return;
+    }
+    free(net->lyrinput_grad);
+    return;
+}
+
+/*
 void mlpexec_setup(uint32_t calclyrs ,netLyrConf *net, mlpExecStatus *dest){
     dest->calclyrs = calclyrs;
     dest->modelsrc = net;
@@ -67,20 +134,37 @@ void mlpexec_cleanup(mlpExecStatus *net){
     free(net->fullConnData_tmp[1]);
     net->modelsrc = 0;
 }
+*/
+void mlpexec_setup(uint32_t calclyrs ,netLyrConf *net, mlpExecStatus *dest){
+    dest->calclyrs = calclyrs;
+    dest->modelsrc = net;
+    uint16_t outdim_max = 0;
+    for(uint32_t i = 0; i < calclyrs; i++){
+        uint16_t outdim = net[i].out_dim;
+        if(outdim > outdim_max) outdim_max = outdim;
+    }
+    dest->fullConnData_tmp[0] = (qfix*)malloc(sizeof(qfix*) * outdim_max * 2);
+    dest->fullConnData_tmp[1] = dest->fullConnData_tmp[0] + outdim_max;
+}
 
+void mlpexec_cleanup(mlpExecStatus *net){
+    free(net->fullConnData_tmp[0]);
+    net->modelsrc = 0;
+    net->calclyrs = 0;
+}
 
 void mlptrainer_totalgrads_savegrads(mlpTrainStatus *net_or_gradcap, mlpTrainStatus *gradscap_dest){
     uint32_t size = net_or_gradcap->calclyrs;
     netLyrConf *nsrc = net_or_gradcap->modelsrc;
     for(uint32_t i = 0; i < size; i++){
-        uint16_t outdi = nsrc->out_dim;
-        uint32_t wsize = nsrc->in_dim * outdi;
+        uint16_t indi = nsrc->in_dim;
+        uint32_t wsize = nsrc->out_dim * indi;
         qfix *bgrad_src = net_or_gradcap->lyrinput_grad[i];
         qfix *wgrad_src = net_or_gradcap->w_grad[i];
         qfix *bgrad_dst = gradscap_dest->lyrinput_grad[i];
         qfix *wgrad_dst = gradscap_dest->w_grad[i];
 
-        for(uint16_t i_ = 0; i_ < outdi; i_++) bgrad_dst[i_] += bgrad_src[i_];
+        for(uint16_t i_ = 0; i_ < indi; i_++) bgrad_dst[i_] += bgrad_src[i_];
         for(uint32_t i_ = 0; i_ < wsize; i_++) wgrad_dst[i_] += wgrad_src[i_];
 
         nsrc++;

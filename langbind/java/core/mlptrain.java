@@ -13,7 +13,8 @@ public class mlptrain{
         System.loadLibrary("lmlpcore_tojava");
     }
 
-    private native void setuptrainer(netdef modeldef, boolean saveGradsOnly);
+    private native void setuptrainer(netdef modeldef);
+    private native void setuptrainer_asGradCollector(netdef modeldef);
 
     private native void dealloctrainer();
 
@@ -30,9 +31,13 @@ public class mlptrain{
         netsrc = null;
     }
     
-    public mlptrain(netdef modeldef, boolean forSaveGrads = false){
+    public mlptrain(netdef modeldef, boolean forSaveGrads){
         this.netsrc = modeldef;
-        setuptrainer(modeldef);
+        if(!forSaveGrads){
+            setuptrainer(modeldef);
+        } else{
+            setuptrainer_asGradCollector(modeldef);
+        }
     }
 
 }

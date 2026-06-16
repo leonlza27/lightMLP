@@ -17,6 +17,14 @@ JNIEXPORT void JNICALL Java_core_mlptrain_setuptrainer
 
 /*
  * Class:     core_mlptrain
+ * Method:    setuptrainer_asGradCollector
+ * Signature: (Lcore/netdef;)V
+ */
+JNIEXPORT void JNICALL Java_core_mlptrain_setuptrainer_1asGradCollector
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     core_mlptrain
  * Method:    dealloctrainer
  * Signature: ()V
  */
@@ -41,11 +49,35 @@ JNIEXPORT void JNICALL Java_core_mlptrain_backward
 
 /*
  * Class:     core_mlptrain
+ * Method:    savegrads_to
+ * Signature: (Lcore/mlptrain;)V
+ */
+JNIEXPORT void JNICALL Java_core_mlptrain_savegrads_1to
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     core_mlptrain
+ * Method:    backward_from_totalgrads
+ * Signature: (Lcore/mlptrain;F)V
+ */
+JNIEXPORT void JNICALL Java_core_mlptrain_backward_1from_1totalgrads
+  (JNIEnv *, jobject, jobject, jfloat);
+
+/*
+ * Class:     core_mlptrain
  * Method:    get_grad2last
  * Signature: (Lmlib/matrixbp;)V
  */
 JNIEXPORT void JNICALL Java_core_mlptrain_get_1grad2last
   (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     core_mlptrain
+ * Method:    isGradSaver
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_core_mlptrain_isGradSaver
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

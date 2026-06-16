@@ -5,7 +5,7 @@
 #include "ac_callback.h"
 #include <stdlib.h>
 
-#ifdef _DBG
+#ifdef CORE_DBG
 #undef DLLEXPORT
 #define DLLEXPORT
 #endif
@@ -19,7 +19,7 @@ typedef struct _netlyrcnf{
 typedef struct _mlp_train_status{
     uint32_t calclyrs; 
     netLyrConf *modelsrc;
-    qfix **fullConnData;
+    qfix **fullConnData; //0为梯度累积器
     qfix **w_grad;
     qfix **lyrinput_grad;
 }mlpTrainStatus;
