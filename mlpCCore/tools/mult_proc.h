@@ -62,11 +62,11 @@ _RTp (mark)(void* param){\
 #ifdef _WIN32
 #define multi_process_c(total_tasks, workerFunc, dataIn){\
     SYSTEM_INFO info;\
-    GetSystemInfo(&info)\
+    GetSystemInfo(&info);\
     long avaCpuCount = info.dwNumberOfProcessors;\
     size_t threadnum =  (size_t)((total_tasks * (total_tasks + 4)) / (total_tasks * 4 + 8));\
     threadnum = _max(_min(threadnum,avaCpuCount),1);\
-    pthread_t *subthreads = (HANDLE*)(malloc(sizeof(HANDLE)*threadnum));\
+    HANDLE *subthreads = (HANDLE*)(malloc(sizeof(HANDLE)*threadnum));\
     Rate *subpara = (Rate*)(malloc(sizeof(Rate)*threadnum));\
 \
     size_t tasks_per_proc = (size_t)(total_tasks/threadnum) + 2;\
@@ -87,7 +87,7 @@ _RTp (mark)(void* param){\
     (workerFunc)(locm);\
 \
     for(size_t i = 1; i< threadnum; i++){\
-        WaitForSigleObject(subthreads[i], INFINITE);\
+        WaitForSingleObject(subthreads[i], INFINITE);\
         CloseHandle(subthreads[i]);\
     }\
     free(subthreads);\

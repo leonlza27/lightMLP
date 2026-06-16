@@ -6,6 +6,11 @@
 struct _netlyrcnf;
 typedef struct _netlyrcnf netLyrConf;
 #include <stdint.h>
+#ifdef _WIN32
+#define DLLEXPORT _declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
 
 #define lmlp_DUMPBINHEADER_ERR -1
 #define lmlp_DUMPINFOW_ERR -2       //Weights
@@ -21,10 +26,10 @@ typedef struct _netlyrcnf netLyrConf;
 #define lmlp_WRITESRCCODESTR_ERR -11
 #define lmlp_WRITESRCCODEVDEF_ERR -12
 
-int savemodel(const char *fname ,uint32_t lyrcnt ,const netLyrConf *modelsrc);
+int DLLEXPORT savemodel(const char *fname ,uint32_t lyrcnt ,const netLyrConf *modelsrc);
 
-int loadmodel(const char *fname, netLyrConf* *dstnet);
+int DLLEXPORT loadmodel(const char *fname, netLyrConf* *dstnet);
 
-int dump_asCHeader(const char *fname, const char *modelname ,uint32_t lyrcnt ,const netLyrConf *modelsrc);
+int DLLEXPORT dump_asCHeader(const char *fname, const char *modelname ,uint32_t lyrcnt ,const netLyrConf *modelsrc);
 
 #endif 

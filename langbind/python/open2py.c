@@ -1,6 +1,12 @@
 #include "open2py.h"
 #include "../../mlpCCore/mlp/filedump.h"
-#include "matrixbp2py.h"
+#include "import.h"
+#include "mbpbuffer.h"
+#include "object.h"
+#include "pyerrors.h"
+#include "pytypedefs.h"
+
+PyTypeObject *_mbp_tpdef;
 
 PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
     netdefpy *obret = (netdefpy*)tp->tp_alloc(tp, 0);
@@ -186,9 +192,17 @@ PyObject *load_frombin(PyObject *_rtime, PyObject *args){
 
 PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
     netdefpy *src;
-    if(!PyArg_ParseTuple(args, "O!", &netdefpy_tpdef, &src)) return 0;
+    PyObject *flag_gradcontiner = 0;
+    char *kwds[] = {"modelsrc", "totalgrad_cap", 0};
     mlpTrainStatPy *ret = (mlpTrainStatPy*)tp->tp_alloc(tp, 0);
-    mlptrainer_setup(src->lyrcnt, src->nstruct, &ret->statloc);
+    if(!PyArg_ParseTupleAndKeywords(args, args_dict, "O!|O", kwds, &netdefpy_tpdef, &src, &flag_gradcontiner)) return 0;
+    if(!flag_gradcontiner) mlptrainer_setup(src->lyrcnt, src->nstruct, &ret->statloc);
+    else if((PyBool_Check(flag_gradcontiner) && flag_gradcontiner == Py_True) || (PyLong_Check(flag_gradcontiner) && PyLong_AsLong(flag_gradcontiner)))
+        mlptrainer_totalgrads_cap_setup(src->lyrcnt, src->nstruct, &ret->statloc);
+    else{
+        PyErr_SetString(PyExc_TypeError, "arg \"totalgrad_cap\" not a bool (or int)");
+        return 0;
+    }
     Py_INCREF(src);
     ret->modelsrc = src;
     return (PyObject*)ret;
@@ -201,10 +215,9 @@ void mlptrainpy_dealloc(PyObject *self){
 }
 
 PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args){    
-    Py_INCREF(self);
     mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
     matrixbp_py *vecin, *ret = 0;
-    if(!PyArg_ParseTuple(args, "O!|O!", &mbp_py_tpdef, &vecin, &mbp_py_tpdef, &ret)) goto _err_ret;
+    if(!PyArg_ParseTuple(args, "O!|O!", _mbp_tpdef, &vecin, _mbp_tpdef, &ret)) goto _err_ret;
     if(vecin->info->cols != 1){
         PyErr_SetString(PyExc_ValueError, "arg \"vecin\" not a vector(cols != 1)");
         goto _err_ret;
@@ -227,27 +240,26 @@ PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args){
     goto _actual_exec;
 
 _allocate_mbppy_if_0:
-    ret = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
+    ret = PyObject_NEW(matrixbp_py, _mbp_tpdef);
     ret->info = alloc_matrix_bp(outdim, 1);
 
 _actual_exec:
     mlptrainer_execute(&obj->statloc, vecin->info->data);
     qfix *resusrc = obj->statloc.fullConnData[obj->modelsrc->lyrcnt], *dest = ret->info->data;
     for(uint16_t i = 0; i < outdim; i++) dest[i] = resusrc[i];
-    Py_DECREF(self);
     return (PyObject*)ret;
 
 _err_ret:
-    Py_DECREF(self);
     return 0;
 }
 
 PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args){
-    Py_INCREF(self);
     mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
     matrixbp_py *grad0;
+    mlpTrainStatPy *gradscap;
     double lr;
-    if(!PyArg_ParseTuple(args, "O!d", &mbp_py_tpdef, &grad0, &lr)) goto _err_ret;
+    if(!PyArg_ParseTuple(args, "Od", &grad0, &lr)) goto _err_ret;
+    if(!Py_IS_TYPE(grad0, _mbp_tpdef)) goto _total_grad_backward;
     if(grad0->info->cols != 1){
         PyErr_SetString(PyExc_ValueError, "arg \"grad0\" not a vector(cols != 1)");
         goto _err_ret;
@@ -258,13 +270,60 @@ PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args){
     }
 
     mlptrainer_backward(&obj->statloc, grad0->info->data, float_to_qfix(lr));
+    goto _ret;
+_total_grad_backward:
+    gradscap = (mlpTrainStatPy*)grad0;
+    if(!Py_IS_TYPE(grad0, &mlptrainpy_tpdef) || gradscap->statloc.fullConnData){
+        PyErr_SetString(PyExc_ValueError, "arg \"grad0\" not a matrixbp with inital grad or a mlptrain object for capping grad info");
+        goto _err_ret;
+    }
+    mlptrainer_totalgrads_backward(&obj->statloc, &gradscap->statloc, float_to_qfix(lr));
 
-    Py_DECREF(self);
+_ret:
     Py_RETURN_NONE;
 
 _err_ret:
-    Py_DECREF(self);
     return 0;
+}
+
+PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args){
+    mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
+    matrixbp_py *ret = 0;
+    qfix *datadst, *grad_final;
+    if(!PyArg_ParseTuple(args, "|O!", _mbp_tpdef, &ret)) goto _err_ret;
+    uint16_t indim = obj->modelsrc->nstruct[0].in_dim;
+    if(!ret) goto _allocate_mbppy_if_0;
+    if(ret->info->cols != 1){
+        PyErr_SetString(PyExc_ValueError, "arg \"ret\" not a vector(cols != 1)");
+        goto _err_ret;
+    }
+    if(ret->info->rows < indim){
+        PyErr_SetString(PyExc_ValueError, "arg \"ret\" rows less than the netdef[0].indim for init the class");
+        goto _err_ret;
+    }
+    Py_INCREF(ret);
+    goto _actual_exec;
+
+_allocate_mbppy_if_0:
+    ret = PyObject_NEW(matrixbp_py, _mbp_tpdef);
+    ret->info = alloc_matrix_bp(indim, 1);
+
+_actual_exec:
+    datadst = ret->info->data;
+    grad_final = obj->statloc.lyrinput_grad[0];
+    for(uint16_t i = 0; i < indim; i++) datadst[i] = grad_final[i];
+    return (PyObject*)ret;
+
+_err_ret:
+    return 0;
+
+}
+
+PyObject *mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args){
+    mlpTrainStatPy *from, *gradto;
+    if(!PyArg_ParseTuple(args, "O!O!", &mlptrainpy_tpdef, &from, &mlptrainpy_tpdef, &gradto)) return 0;
+    mlptrainer_totalgrads_savegrads(&from->statloc ,&gradto->statloc);
+    Py_RETURN_NONE;
 }
 
 PyObject *mlpexecpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict){
@@ -284,10 +343,9 @@ void mlpexecpy_dealloc(PyObject *self){
 }
 
 PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args){    
-    Py_INCREF(self);
     mlpExecStatPy *obj = (mlpExecStatPy*)self;
     matrixbp_py *vecin, *ret = 0;
-    if(!PyArg_ParseTuple(args, "O!|O!", &mbp_py_tpdef, &vecin, &mbp_py_tpdef, &ret)) goto _err_ret;
+    if(!PyArg_ParseTuple(args, "O!|O!", _mbp_tpdef, &vecin, _mbp_tpdef, &ret)) goto _err_ret;
     if(vecin->info->cols != 1){
         PyErr_SetString(PyExc_ValueError, "arg \"vecin\" not a vector(cols != 1)");
         goto _err_ret;
@@ -310,18 +368,16 @@ PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args){
     goto _actual_exec;
 
 _allocate_mbppy_if_0:
-    ret = PyObject_NEW(matrixbp_py, &mbp_py_tpdef);
+    ret = PyObject_NEW(matrixbp_py, _mbp_tpdef);
     ret->info = alloc_matrix_bp(outdim, 1);
 
 _actual_exec:
     mlpexec_execute(&obj->statloc, vecin->info->data);
     qfix *resusrc = obj->statloc.fullConnData_tmp[(obj->modelsrc->lyrcnt + 1)%2], *dest = ret->info->data;
     for(uint16_t i = 0; i < outdim; i++) dest[i] = resusrc[i];
-    Py_DECREF(self);
     return (PyObject*)ret;
 
 _err_ret:
-    Py_DECREF(self);
     return 0;
 }
 
@@ -331,6 +387,16 @@ PyObject *mlpexecpy_mexecute_opcall(PyObject *self, PyObject *args, PyObject *ar
 
 PyMODINIT_FUNC PyInit_libcorepy(){
     PyObject *retmodule = 0;
+
+    PyObject *libmbp16 = PyImport_ImportModule("libmbp16d");
+    if(!libmbp16){
+        PyErr_SetString(PyExc_ImportError, "cannot get libmbp16d matrixbp buffer type");
+        return 0;
+    }
+
+    _mbp_tpdef = (PyTypeObject*)PyObject_GetAttrString(libmbp16, "matrixbp");
+    Py_DECREF(libmbp16);
+
     if(0 > PyType_Ready(&netdefpy_tpdef)) return 0;
     if(0 > PyType_Ready(&mlptrainpy_tpdef)) return 0;
     if(0 > PyType_Ready(&mlpexecpy_tpdef)) return 0;
