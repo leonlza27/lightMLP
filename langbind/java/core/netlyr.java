@@ -6,7 +6,7 @@ public class netlyr{
     private byte _actp;
     private float dexa;
 
-    enum actp{
+    public enum actp{
         ac_ReLU         ,
         ac_ReLU6        ,
         ac_LeakyReLU    ,

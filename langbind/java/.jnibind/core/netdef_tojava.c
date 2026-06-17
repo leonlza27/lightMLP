@@ -24,6 +24,7 @@ JNIEXPORT void JNICALL Java_core_netdef_setup_1ndef(JNIEnv *env, jobject _this, 
         jnienvcall->ThrowNew(env, idx_javaclass("java/lang/NullPointerException"), "can not allocte a memory for netdef at native");
         return;
     }
+    //printf("addr malloced %p\n",ret_addr);
     uint32_t i_cut = 0;
 
     for(uint32_t i = 0; i < netlen; i++){
@@ -50,9 +51,9 @@ JNIEXPORT void JNICALL Java_core_netdef_setup_1ndef(JNIEnv *env, jobject _this, 
         ret_addr[i].bias = b_new;
     }
 
-    jnienvcall->SetIntField(env, _this, netlen_j, *((jint*)&netlen));
-    jnienvcall->SetLongField(env, _this, addr_of_ndef, *((jlong*)&ret_addr));
-    
+    jnienvcall->SetIntField(env, _this, netlen_j, _reinterpt(jint, netlen));
+    jnienvcall->SetLongField(env, _this, addr_of_ndef, _reinterpt(jlong, ret_addr));
+    //printf("netdef::_addr %p\n", addr_of_ndef);
     return;
 
 _err_ret:
