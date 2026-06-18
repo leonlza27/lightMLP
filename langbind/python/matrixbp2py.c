@@ -1,6 +1,6 @@
 #include <Python.h>
 #include <stdio.h>
-#include "../../mlpCCore/matrix/matrix_static.h"
+#include "mlpCCore/matrix/matrix_static.h"
 #include "mbpbuffer.h"
 
 DLLEXPORT PyObject *mbp_add(PyObject *self, PyObject *args){

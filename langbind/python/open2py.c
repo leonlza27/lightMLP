@@ -1,5 +1,6 @@
 #include "open2py.h"
-#include "../../mlpCCore/mlp/filedump.h"
+#include "boolobject.h"
+#include "mlpCCore/mlp/filedump.h"
 #include "import.h"
 #include "mbpbuffer.h"
 #include "object.h"
@@ -218,24 +219,8 @@ PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args){
     mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
     matrixbp_py *vecin, *ret = 0;
     if(!PyArg_ParseTuple(args, "O!|O!", _mbp_tpdef, &vecin, _mbp_tpdef, &ret)) goto _err_ret;
-    if(vecin->info->cols != 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"vecin\" not a vector(cols != 1)");
-        goto _err_ret;
-    }
-    if(vecin->info->rows < obj->modelsrc->nstruct[0].in_dim){
-        PyErr_SetString(PyExc_ValueError, "arg \"vecin\" rows less than the netdef[0].indim for init the class");
-        goto _err_ret;
-    }
     uint16_t outdim = obj->modelsrc->nstruct[obj->modelsrc->lyrcnt - 1].out_dim;
     if(!ret) goto _allocate_mbppy_if_0;
-    if(ret->info->cols != 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"ret\" not a vector(cols != 1)");
-        goto _err_ret;
-    }
-    if(ret->info->rows < outdim){
-        PyErr_SetString(PyExc_ValueError, "arg \"ret\" rows less than the netdef[-1].outdim for init the class");
-        goto _err_ret;
-    }
     Py_INCREF(ret);
     goto _actual_exec;
 
@@ -260,14 +245,6 @@ PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args){
     double lr;
     if(!PyArg_ParseTuple(args, "Od", &grad0, &lr)) goto _err_ret;
     if(!Py_IS_TYPE(grad0, _mbp_tpdef)) goto _total_grad_backward;
-    if(grad0->info->cols != 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"grad0\" not a vector(cols != 1)");
-        goto _err_ret;
-    }
-    if(grad0->info->rows < obj->modelsrc->nstruct[obj->modelsrc->lyrcnt - 1].out_dim){
-        PyErr_SetString(PyExc_ValueError, "arg \"grad0\" rows less than the netdef[-1].outdim for init the class");
-        goto _err_ret;
-    }
 
     mlptrainer_backward(&obj->statloc, grad0->info->data, float_to_qfix(lr));
     goto _ret;
@@ -293,14 +270,6 @@ PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args){
     if(!PyArg_ParseTuple(args, "|O!", _mbp_tpdef, &ret)) goto _err_ret;
     uint16_t indim = obj->modelsrc->nstruct[0].in_dim;
     if(!ret) goto _allocate_mbppy_if_0;
-    if(ret->info->cols != 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"ret\" not a vector(cols != 1)");
-        goto _err_ret;
-    }
-    if(ret->info->rows < indim){
-        PyErr_SetString(PyExc_ValueError, "arg \"ret\" rows less than the netdef[0].indim for init the class");
-        goto _err_ret;
-    }
     Py_INCREF(ret);
     goto _actual_exec;
 
@@ -317,6 +286,12 @@ _actual_exec:
 _err_ret:
     return 0;
 
+}
+
+DLLEXPORT PyObject *mlptrainpy_mcheckgradsaver(PyObject *self, PyObject *args){
+    mlpTrainStatPy *obj = (mlpTrainStatPy*)self;
+    if(obj->statloc.fullConnData) Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
 }
 
 PyObject *mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args){
@@ -346,24 +321,8 @@ PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args){
     mlpExecStatPy *obj = (mlpExecStatPy*)self;
     matrixbp_py *vecin, *ret = 0;
     if(!PyArg_ParseTuple(args, "O!|O!", _mbp_tpdef, &vecin, _mbp_tpdef, &ret)) goto _err_ret;
-    if(vecin->info->cols != 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"vecin\" not a vector(cols != 1)");
-        goto _err_ret;
-    }
-    if(vecin->info->rows < obj->modelsrc->nstruct[0].in_dim){
-        PyErr_SetString(PyExc_ValueError, "arg \"vecin\" rows less than the netdef[0].indim for init the class");
-        goto _err_ret;
-    }
     uint16_t outdim = obj->modelsrc->nstruct[obj->modelsrc->lyrcnt - 1].out_dim;
     if(!ret) goto _allocate_mbppy_if_0;
-    if(ret->info->cols != 1){
-        PyErr_SetString(PyExc_ValueError, "arg \"ret\" not a vector(cols != 1)");
-        goto _err_ret;
-    }
-    if(ret->info->rows < outdim){
-        PyErr_SetString(PyExc_ValueError, "arg \"ret\" rows less than the netdef[-1].outdim for init the class");
-        goto _err_ret;
-    }
     Py_INCREF(ret);
     goto _actual_exec;
 

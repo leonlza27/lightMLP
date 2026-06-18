@@ -2,7 +2,9 @@
 #define _mlpccore_pyapi
 
 #include <Python.h>
-#include "../../mlpCCore/mlp/mlp.h"
+#include "methodobject.h"
+#include "mlpCCore/mlp/mlp.h"
+#include "pytypedefs.h"
 
 struct _mbp_topy;
 typedef struct _mbp_topy matrixbp_py;
@@ -16,6 +18,7 @@ typedef struct netdefpy{
 DLLEXPORT PyObject *netdefpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
 DLLEXPORT void netdefpy_dealloc(PyObject *self);
 
+//python: buildnet(netdef: List[Tuple[int , int, int<enum core.actp>, float]])
 DLLEXPORT PyObject *buildnet(PyObject *_rtime, PyObject *args);
 
 //dict contains kwd: filetype, exposemrk
@@ -46,18 +49,23 @@ typedef struct mlpTrainStatPy{
 DLLEXPORT PyObject *mlptrainpy_new(PyTypeObject *tp, PyObject *args, PyObject *args_dict);
 DLLEXPORT void mlptrainpy_dealloc(PyObject *self);
 
-//in python: mlptrain.execute(vecin: matrixbp)
+//python: mlptrain.execute(vecin: matrixbp, <optional> vecout: matrixbp) ->matrixbp
 //same for exec_only one
+//if vecout passed, it will return it after modifying, else create a new one
 DLLEXPORT PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args);
-//in python: mlptrain.backward(grad: matrixbp, lr: Float)
+//python: mlptrain.backward(grad: matrixbp, lr: Float) -> None
 DLLEXPORT PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args);
-
+//python: mlptrain.finalgrads(<optional> vecgrad0: matrixbp) -> matrixbp
+//if vecgrad0 passed, it will return it after modifying, else create a new one
 DLLEXPORT PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args);
+//python: mlptrain.isgradsaver() -> bool
+DLLEXPORT PyObject *mlptrainpy_mcheckgradsaver(PyObject *self, PyObject *args);
 
 static PyMethodDef mlptrainpy_memberfns[] = {
     {"execute", mlptrainpy_mexecute, METH_VARARGS, 0},
     {"backward", mlptrainpy_mbackward, METH_VARARGS, 0},
     {"finalgrads", mlptrainpy_mgetfinalgrads, METH_VARARGS, 0},
+    {"isgradsaver", mlptrainpy_mcheckgradsaver, METH_VARARGS, 0},
     {0,0,0,0},
 };
 

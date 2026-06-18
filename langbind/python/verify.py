@@ -14,7 +14,8 @@ for i in range(2000):
     vecin.fromlist(_in)
     vecexc.fromlist(excp)
     resu = ntrain.execute(vecin)
-    mlib.msub(vecexc,resu,vecgrad)
+    #mlib.msub(vecexc,resu,vecgrad)
+    vecgrad.fromlist([excp[0] - resu.tolist()[0]])
    
     ntrain.backward(vecgrad, 0.15)
 
