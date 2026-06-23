@@ -2,9 +2,9 @@
 #if you need to use for the embdded or have moditifed one, just use the source code
 #and use the cmake script carefully
 
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.30.5)
 
-project(test)
+project(lightMLP)
 
 ADD_SUBDIRECTORY(mlpCCore)
 ADD_SUBDIRECTORY(langbind)

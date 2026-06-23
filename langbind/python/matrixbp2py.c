@@ -73,7 +73,7 @@ static struct PyModuleDef matrixbp_topy_root = {
     .m_methods = moudlefns
 };
 
-PyMODINIT_FUNC PyInit_libmbp16d(){
+PyMODINIT_FUNC PyInit_mbp16dpy(){
     PyObject *m;
     if(PyType_Ready(&mbp_py_tpdef)) return 0;
     m = PyModule_Create(&matrixbp_topy_root);

@@ -22,19 +22,19 @@ typedef struct matrix_bp_data{
 }matrix_bp_data,*matrix_bp, *matrix_qfix;
 #pragma pack(pop)
 
-matrix_bp alloc_matrix_bp(uint16_t m, uint16_t n); 
+DLLEXPORT matrix_bp alloc_matrix_bp(uint16_t m, uint16_t n);
 
-void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu);
+DLLEXPORT void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu);
 
-void matrix_bp_sub(const matrix_bp_data *msrc, const matrix_bp_data *msub, matrix_bp_data *resu);
+DLLEXPORT void matrix_bp_sub(const matrix_bp_data *msrc, const matrix_bp_data *msub, matrix_bp_data *resu);
 
-void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
+DLLEXPORT void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
 
-void matrix_bp_mulptyByElem(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
+DLLEXPORT void matrix_bp_mulptyByElem(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, matrix_bp_data *resu);
 
-void matrix_bp_scale(const matrix_bp_data *msrc, const qfix num, matrix_bp_data *resu);
+DLLEXPORT void matrix_bp_scale(const matrix_bp_data *msrc, const qfix num, matrix_bp_data *resu);
 
-void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest);
+DLLEXPORT void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest);
 
 /*
 更方便的矩阵初始化
@@ -56,6 +56,6 @@ void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest);
 注:示例为直接int32输入而非标准qfix, 务必使用float_to_qfix(可传整数与浮点)  
 
 */
-void plot_matrix_bp(matrix_bp tg, uint16_t m, uint16_t n, uint8_t flag, ...);
+DLLEXPORT void plot_matrix_bp(matrix_bp tg, uint16_t m, uint16_t n, uint8_t flag, ...);
 
 #endif

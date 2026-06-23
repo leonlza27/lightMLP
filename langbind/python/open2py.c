@@ -344,7 +344,7 @@ PyObject *mlpexecpy_mexecute_opcall(PyObject *self, PyObject *args, PyObject *ar
     return mlpexecpy_mexecute(self, args);
 }
 
-PyMODINIT_FUNC PyInit_libcorepy(){
+PyMODINIT_FUNC PyInit_corepy(){
     PyObject *retmodule = 0;
 
     PyObject *libmbp16 = PyImport_ImportModule("libmbp16d");
