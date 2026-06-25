@@ -347,7 +347,7 @@ PyObject *mlpexecpy_mexecute_opcall(PyObject *self, PyObject *args, PyObject *ar
 PyMODINIT_FUNC PyInit_corepy(){
     PyObject *retmodule = 0;
 
-    PyObject *libmbp16 = PyImport_ImportModule("libmbp16d");
+    PyObject *libmbp16 = PyImport_ImportModule("mbp16dpy");
     if(!libmbp16){
         PyErr_SetString(PyExc_ImportError, "cannot get libmbp16d matrixbp buffer type");
         return 0;

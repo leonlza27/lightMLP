@@ -1,6 +1,10 @@
 find_package(Python 3.12 COMPONENTS Development REQUIRED)
 
-link_directories(${PROJECT_BINARY_DIR}/mlpCCore)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__/py_bind)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__/py_bind)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__/py_bind)
+
+link_directories(${PROJECT_BINARY_DIR}/__out__/core)
 
 add_library(mbpbuffer SHARED mbpbuffer.c)
 add_library(corepy MODULE open2py.c)

@@ -1,8 +1,8 @@
-import libcorepy as core
-import libmbp16d as mlib
+import corepy as core
+import mbp16dpy as mlib
 import random
 
-ndef = core.buildnet([(2,5,0,0),(5,1,5,0)])
+ndef = core.buildnet([(2,5,core.actp.ReLU,0),(5,1,core.actp.Tanh,0)])
 ntrain = core.mlptrain(ndef)
 
 vecin = mlib.matrixbp(2,1)

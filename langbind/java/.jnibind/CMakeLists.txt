@@ -1,3 +1,7 @@
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__/java_bind)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__/java_bind)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__/java_bind)
+
 # 基础Java运行时检测
 find_package(Java 1.7 REQUIRED)
 
@@ -6,10 +10,11 @@ find_package(Java COMPONENTS Development JarSigner REQUIRED)
 
 find_package(JNI COMPONENTS AWT JVM REQUIRED)
 
+#[[
 # 验证JNI环境变量
 message(STATUS "JNI头文件路径: ${JNI_INCLUDE_DIRS}")
 message(STATUS "JNI库文件: ${JNI_LIBRARIES}")
-
+]]
 set(JAVA_INCLUDE $ENV{JAVA_HOME}/include)
 
 IF (WIN32)

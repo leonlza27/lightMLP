@@ -1,5 +1,5 @@
-import libcorepy as core
-import libmbp16d as mlib
+import corepy as core
+import mbp16dpy as mlib
 import random
 
 print("checkpoint")
