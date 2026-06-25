@@ -108,9 +108,9 @@ static const f_q16_16 exp_lut_q16[256] = {
 //不同位宽指针长度定义
 #define _PTRLEN sizeof(void*)
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER) //用于windows下采用msvc编译,动态库符号默认不导出
 #define DLLEXPORT _declspec(dllexport)
-#else
+#else //GCC&Clang 符号默认全导出
 #define DLLEXPORT
 #endif
 

@@ -1,8 +1,8 @@
-import libcorepy as core
-import libmbp16d as mlib
+import corepy as core
+import mbp16dpy as mlib
 import random
 
-ndef = core.buildnet([(2,5,0,0),(5,1,5,0)])
+ndef = core.buildnet([(2,5,core.actp.ReLU,0),(5,1,core.actp.Tanh,0)])
 ntrain = core.mlptrain(ndef)
 
 vecin = mlib.matrixbp(2,1)
@@ -14,7 +14,8 @@ for i in range(2000):
     vecin.fromlist(_in)
     vecexc.fromlist(excp)
     resu = ntrain.execute(vecin)
-    mlib.msub(vecexc,resu,vecgrad)
+    #mlib.msub(vecexc,resu,vecgrad)
+    vecgrad.fromlist([excp[0] - resu.tolist()[0]])
    
     ntrain.backward(vecgrad, 0.15)
 

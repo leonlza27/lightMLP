@@ -6,7 +6,7 @@
 struct _netlyrcnf;
 typedef struct _netlyrcnf netLyrConf;
 #include <stdint.h>
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER)
 #define DLLEXPORT _declspec(dllexport)
 #else
 #define DLLEXPORT

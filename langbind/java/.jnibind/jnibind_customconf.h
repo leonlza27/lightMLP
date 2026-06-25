@@ -13,4 +13,6 @@
 #define javaclasspath_mlptrain "core/mlptrain"
 #define javaclasspath_mlpexec "core/mlpexec"
 
+#define idx_javaclass_ob(ob) jnienvcall->GetObjectClass(env, ob)
+
 #endif

@@ -1,9 +1,9 @@
 #include "ac_callback.h"
+#include "../matrix/matrix_static.c"
 #include "mlp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include <winnt.h>
 
 //改为arena allocate
 void mlptrainer_setup_1(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
@@ -57,7 +57,7 @@ int main(){
     qfix b0[3];
     qfix w1[3];
     qfix b1[1];
-    netLyrConf net[] = {{ac_Tanh,2,3,w0,b0,0},{ac_Tanh,3,1,w1,b1,0}};
+    netLyrConf net[] = {{ac_ReLU,2,3,w0,b0,0},{ac_ReLU,3,1,w1,b1,0}};
 
     mlpTrainStatus ntrain, ngradsave;
 #ifndef manual
@@ -88,12 +88,20 @@ int main(){
     x_ls[1] = x_l2;
     ntrain.lyrinput_grad = x_ls;
 #endif
+    matrix_bp mr = alloc_matrix_bp(1,1), mgrad = alloc_matrix_bp(1,1), mexc = alloc_matrix_bp(1,1);
+
     for(int i = 0; i < 500; i++){
         printf("simutlate train epoch %d: fullconndata: %p\nforwarding\n", i, ntrain.fullConnData);
         mlptrainer_execute(&ntrain, w0);
-        qfix simresu = 3;
+        mr->data[0] = ntrain.fullConnData[2][0];
+        //qfix simresu = 3;
+        mexc->data[0] = 3;
+        printf("calc grads\n");
+        matrix_bp_sub(mexc, mr, mgrad);
+
         printf("backwarding\n");
-        mlptrainer_backward(&ntrain, &simresu, 0);
+        mlptrainer_backward(&ntrain, mgrad->data, 0);
+
         printf("saving grads\n");
         mlptrainer_totalgrads_savegrads(&ntrain, &ngradsave);
     }

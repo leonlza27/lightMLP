@@ -7,7 +7,7 @@
 
 
 JNIEXPORT void JNICALL Java_mlib_matrixbp_setupmbp(JNIEnv *env, jobject _this, jint rows, jint cols){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(_this);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
 
     jbyteArray mbp_data_java = jnienvcall->NewByteArray(env, sizeof(matrix_bp_data) + sizeof(qfix) * rows * cols);
@@ -22,7 +22,7 @@ JNIEXPORT void JNICALL Java_mlib_matrixbp_setupmbp(JNIEnv *env, jobject _this, j
 }
 
 JNIEXPORT jstring JNICALL Java_mlib_matrixbp_printmatrix(JNIEnv *env, jobject _this){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(_this);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;
@@ -45,7 +45,7 @@ JNIEXPORT jstring JNICALL Java_mlib_matrixbp_printmatrix(JNIEnv *env, jobject _t
 }
 
 JNIEXPORT void JNICALL Java_mlib_matrixbp_fromlist(JNIEnv *env, jobject _this, jfloatArray lstin){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(_this);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;
@@ -68,7 +68,7 @@ JNIEXPORT void JNICALL Java_mlib_matrixbp_fromlist(JNIEnv *env, jobject _this, j
 }
 
 JNIEXPORT void JNICALL Java_mlib_matrixbp_fromrand(JNIEnv *env, jobject _this){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(_this);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;
@@ -86,7 +86,7 @@ JNIEXPORT void JNICALL Java_mlib_matrixbp_fromrand(JNIEnv *env, jobject _this){
 }
 
 JNIEXPORT jfloatArray JNICALL Java_mlib_matrixbp_toarr_1new(JNIEnv *env, jobject _this){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(_this);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;
@@ -106,7 +106,7 @@ JNIEXPORT jfloatArray JNICALL Java_mlib_matrixbp_toarr_1new(JNIEnv *env, jobject
 }
 
 JNIEXPORT void JNICALL Java_mlib_matrixbp_toarr_1cpy(JNIEnv *env, jobject _this, jfloatArray dest_jobj){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(_this);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;
@@ -128,7 +128,7 @@ JNIEXPORT void JNICALL Java_mlib_matrixbp_toarr_1cpy(JNIEnv *env, jobject _this,
 }
 
 JNIEXPORT jint JNICALL Java_mlib_matrixbp_rows(JNIEnv *env, jobject _this){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(_this);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;
@@ -139,7 +139,7 @@ JNIEXPORT jint JNICALL Java_mlib_matrixbp_rows(JNIEnv *env, jobject _this){
 }
 
 JNIEXPORT jint JNICALL Java_mlib_matrixbp_cols(JNIEnv *env, jobject _this){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(_this);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     jbyteArray mbp_data_java = jnienvcall->GetObjectField(env, _this, mbp_data_java_slot);
     jboolean oncopy = 0;

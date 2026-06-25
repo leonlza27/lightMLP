@@ -9,14 +9,21 @@ typedef struct _mbp_topy{
     matrix_bp info;
 }matrixbp_py;
 
+//module mbp16dpy
+
+//[EXPOSE]python: matrixbp.__init__(rows:int, cols:int)
 DLLEXPORT PyObject* mbp_new(PyTypeObject *tp, PyObject *args, PyObject *kwargs);
 DLLEXPORT void mbp_dealloc(PyObject *self);
 
+//[EXPOSE]python: matrixbp.__repr__()
 DLLEXPORT PyObject *mbp_repr(PyObject *self);
 
+//[EXPOSE]python: matrixbp.fromlist(lstin: List[int|float]) -> None
 DLLEXPORT PyObject *mbp_fromlist(PyObject *self, PyObject *args);
+//[EXPOSE]python: matrixbp.fromrand() -> None
 DLLEXPORT PyObject *mbp_fromrand(PyObject *self, PyObject *args);
 
+//[EXPOSE]python: matrixbp.tolist(**kwargs[<optional>arr2d: bool|int = 0]) -> List[float] | List[List[float]]
 DLLEXPORT PyObject *mbp_tolist(PyObject *self, PyObject *args, PyObject *args_dict);
 
 static PyMethodDef fn_mbp_py[] = {
@@ -28,7 +35,7 @@ static PyMethodDef fn_mbp_py[] = {
 
 static PyTypeObject mbp_py_tpdef = {
     .ob_base = PyVarObject_HEAD_INIT(0, 0)
-    .tp_name = "libmbp16d.matrixbp",
+    .tp_name = "mbp16dpy.matrixbp",
     .tp_basicsize = sizeof(matrixbp_py),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT,

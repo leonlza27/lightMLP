@@ -1,8 +1,12 @@
 #include <Python.h>
 #include <stdio.h>
-#include "../../mlpCCore/matrix/matrix_static.h"
+#include "mlpCCore/matrix/matrix_static.h"
 #include "mbpbuffer.h"
 
+//module mbp16dpy
+
+
+//[EXPOSE]python: madd(m1:matrixbp, m2:matrixbp, mr:matrixbp) ->None
 DLLEXPORT PyObject *mbp_add(PyObject *self, PyObject *args){
     printf("func called\n");
     matrixbp_py *m1, *m2, *mr;
@@ -12,6 +16,7 @@ DLLEXPORT PyObject *mbp_add(PyObject *self, PyObject *args){
     Py_RETURN_NONE;
 }
 
+//[EXPOSE]python: msub(m1:matrixbp, m2:matrixbp, mr:matrixbp) -> None
 DLLEXPORT PyObject *mbp_sub(PyObject *self, PyObject *args){
     matrixbp_py *m1, *m2, *mr;
     if(!PyArg_ParseTuple(args, "O!O!O!", &mbp_py_tpdef, &m1, &mbp_py_tpdef, &m2, &mbp_py_tpdef, &mr)) return 0;
@@ -19,6 +24,7 @@ DLLEXPORT PyObject *mbp_sub(PyObject *self, PyObject *args){
     Py_RETURN_NONE;
 }
 
+//[EXPOSE]python: mscale(m1:matrixbp, scale:int|float, mr:matrixbp) ->None
 DLLEXPORT PyObject *mbp_scale(PyObject *self, PyObject *args){
     matrixbp_py *m1, *mr;
     PyObject *sc_o;
@@ -37,6 +43,7 @@ DLLEXPORT PyObject *mbp_scale(PyObject *self, PyObject *args){
     Py_RETURN_NONE;
 }
 
+//[EXPOSE]python: mmulElem(m1:matrixbp, m2:matrixbp, mr:matrixbp) ->None
 DLLEXPORT PyObject *mbp_mulByElem(PyObject *self, PyObject *args){
     matrixbp_py *m1, *m2, *mr;
     if(!PyArg_ParseTuple(args, "O!O!O!", &mbp_py_tpdef, &m1, &mbp_py_tpdef, &m2, &mbp_py_tpdef, &mr)) return 0;
@@ -44,6 +51,7 @@ DLLEXPORT PyObject *mbp_mulByElem(PyObject *self, PyObject *args){
     Py_RETURN_NONE;
 }
 
+//[EXPOSE]python: mmul(m1:matrixbp, m2:matrixbp, mr:matrixbp) ->None
 DLLEXPORT PyObject *mbp_mul(PyObject *self, PyObject *args){
     matrixbp_py *m1, *m2, *mr;
     if(!PyArg_ParseTuple(args, "O!O!O!", &mbp_py_tpdef, &m1, &mbp_py_tpdef, &m2, &mbp_py_tpdef, &mr)) return 0;
@@ -51,6 +59,7 @@ DLLEXPORT PyObject *mbp_mul(PyObject *self, PyObject *args){
     Py_RETURN_NONE;
 }
 
+//[EXPOSE]python: mtpose(m1:matrixbp, mr:matrixbp) ->None
 DLLEXPORT PyObject *mbp_transpose(PyObject *self, PyObject *args){
     matrixbp_py *m1, *mr;
     if(!PyArg_ParseTuple(args, "O!O!", &mbp_py_tpdef, &m1, &mbp_py_tpdef, &mr)) return 0;
@@ -69,11 +78,11 @@ static PyMethodDef moudlefns[] = {
 };
 
 static struct PyModuleDef matrixbp_topy_root = {
-    PyModuleDef_HEAD_INIT, "libmbp16d", 0, 0,
+    PyModuleDef_HEAD_INIT, "mbp16dpy", 0, 0,
     .m_methods = moudlefns
 };
 
-PyMODINIT_FUNC PyInit_libmbp16d(){
+PyMODINIT_FUNC PyInit_mbp16dpy(){
     PyObject *m;
     if(PyType_Ready(&mbp_py_tpdef)) return 0;
     m = PyModule_Create(&matrixbp_topy_root);

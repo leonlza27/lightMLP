@@ -3,7 +3,7 @@
 #include "../jnibind_customconf.h"
 
 JNIEXPORT void JNICALL Java_mlib_ops_madd(JNIEnv *env, jclass _nspace, jobject m1o, jobject m2o, jobject mro){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(mro);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     
     jboolean oncopy = 0;
@@ -24,7 +24,7 @@ JNIEXPORT void JNICALL Java_mlib_ops_madd(JNIEnv *env, jclass _nspace, jobject m
 }
 
 JNIEXPORT void JNICALL Java_mlib_ops_msub(JNIEnv *env, jclass _nspace, jobject m1o, jobject m2o, jobject mro){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(mro);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     
     jboolean oncopy = 0;
@@ -45,7 +45,7 @@ JNIEXPORT void JNICALL Java_mlib_ops_msub(JNIEnv *env, jclass _nspace, jobject m
 }
 
 JNIEXPORT void JNICALL Java_mlib_ops_mscale(JNIEnv *env, jclass _nspace, jobject m1o, jfloat num, jobject mro){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(mro);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     
     jboolean oncopy = 0;
@@ -63,7 +63,7 @@ JNIEXPORT void JNICALL Java_mlib_ops_mscale(JNIEnv *env, jclass _nspace, jobject
 }
 
 JNIEXPORT void JNICALL Java_mlib_ops_mmul(JNIEnv *env, jclass _nspace, jobject m1o, jobject m2o, jobject mro){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(mro);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     
     jboolean oncopy = 0;
@@ -84,7 +84,7 @@ JNIEXPORT void JNICALL Java_mlib_ops_mmul(JNIEnv *env, jclass _nspace, jobject m
 }
 
 JNIEXPORT void JNICALL Java_mlib_ops_mmul_1byelem(JNIEnv *env, jclass _nspace, jobject m1o, jobject m2o, jobject mro){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(mro);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     
     jboolean oncopy = 0;
@@ -105,7 +105,7 @@ JNIEXPORT void JNICALL Java_mlib_ops_mmul_1byelem(JNIEnv *env, jclass _nspace, j
 }
 
 JNIEXPORT void JNICALL Java_mlib_ops_mtpose(JNIEnv *env, jclass _nspace, jobject m1o, jobject mro){
-    jclass mbp_tpdef_java = jnienvcall->FindClass(env,javaclasspath_mbp);
+    jclass mbp_tpdef_java = idx_javaclass_ob(mro);
     jfieldID mbp_data_java_slot = jnienvcall->GetFieldID(env, mbp_tpdef_java, "data", "[B");
     
     jboolean oncopy = 0;

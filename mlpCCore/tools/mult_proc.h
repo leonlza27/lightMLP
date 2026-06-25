@@ -55,8 +55,8 @@ _RTp (mark)(void* param){\
     return 0;\
 }\
 
-#define _max(a,b) a > b? a : b
-#define _min(a,b) a < b? a : b
+#define _max(a,b) (a) > (b)? (a) : (b)
+#define _min(a,b) (a) < (b)? (a) : (b)
 
 #ifndef forced_sigle_thread
 #ifdef _WIN32
