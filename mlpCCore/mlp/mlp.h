@@ -33,17 +33,27 @@ typedef struct _mlp_exec_status{
 void DLLEXPORT mlptrainer_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest);
 void DLLEXPORT mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest);
 void DLLEXPORT mlptrainer_cleanup(mlpTrainStatus *net);
- 
+void DLLEXPORT mlptrainer_execute(mlpTrainStatus *model, qfix *arrin);
+
+//支持数据并行
+
 void DLLEXPORT mlptrainer_totalgrads_savegrads(mlpTrainStatus *net_or_gradcap, mlpTrainStatus *gradscap_dest);
 
 void DLLEXPORT mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr);
 void DLLEXPORT mlptrainer_totalgrads_backward(mlpTrainStatus *model, mlpTrainStatus *gradscap, qfix lr);
-void DLLEXPORT mlptrainer_execute(mlpTrainStatus *model, qfix *arrin);
+
+//给卷积用的
+
+void DLLEXPORT mlptrainer_convcalc_zerobia(mlpTrainStatus *model);
+
+#define mlptrain_finalgrads_ref(mlptrain) mlptrain->lyrinput_grad[0]
+#define mlptrain_resu_ref(mlptrain) mlptrain->fullConnData[mlptrain->calclyrs]
 
 void DLLEXPORT mlpexec_setup(uint32_t calclyrs ,netLyrConf *net, mlpExecStatus *dest);
 void DLLEXPORT mlpexec_cleanup(mlpExecStatus *net);
 
 void DLLEXPORT mlpexec_execute(mlpExecStatus *model, qfix *arrin);
 
+#define mlpexec_resu_ref(mlpexec) mlpexec->fullConnData_tmp[(mlpexec->calclyrs + 1) % 2]
 
 #endif

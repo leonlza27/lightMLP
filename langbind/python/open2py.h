@@ -8,8 +8,7 @@
 
 //module corepy
 
-struct _mbp_topy;
-typedef struct _mbp_topy matrixbp_py;
+typedef struct mbp_topy matrixbp_py;
 
 //[EXPOSE] class netdef
 typedef struct netdefpy{

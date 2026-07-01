@@ -243,6 +243,18 @@ void mlptrainer_totalgrads_backward(mlpTrainStatus *model, mlpTrainStatus *grads
         nsrc++;
     }
 }
+/*
+ * conv(via mlptrainer):局部conv_to_mmul展开
+ * calclyrs = 1
+ * W<conv_core> * [in] + b -> out
+ *                       ^
+ *                       =0
+ *  [indim = n<conv_size> , outdim = 1]
+ */
+
+void mlptrainer_convcalc_zerobia(mlpTrainStatus* model){
+    model->modelsrc->bias[0] = 0;
+}
 
 void mlptrainer_execute(mlpTrainStatus *model, qfix *arrin){
     uint32_t size = model->calclyrs;

@@ -5,7 +5,6 @@
 
 //module mbp16dpy
 
-
 //[EXPOSE]python: madd(m1:matrixbp, m2:matrixbp, mr:matrixbp) ->None
 DLLEXPORT PyObject *mbp_add(PyObject *self, PyObject *args){
     printf("func called\n");

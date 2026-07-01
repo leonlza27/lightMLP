@@ -4,7 +4,7 @@
 #include "../CustomConf.h"
 #include "../qfix_ops/qfix_op.h"
 
-enum ml_act_type{
+enum actp{
     ac_ReLU         ,
     ac_ReLU6        ,
     ac_LeakyReLU    ,

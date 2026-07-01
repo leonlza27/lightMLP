@@ -10,7 +10,9 @@ class actp:
     Tanh = 5
     Tanh_hard = 6
     Sign = 7
-    Pass = 8
+    Pass = 8    #自定义激活: [模型前一半,最后一层激活设为Pass]->自定义激活->[模型后一半]
+                #    反向:   [前一半,backward()传入对应微分结果]<-自定义激活对应微分<-[后一半,finalgrads()获取最后梯度]
+
 
 class netdef:
     pass
