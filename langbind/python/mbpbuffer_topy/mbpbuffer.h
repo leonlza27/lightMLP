@@ -2,7 +2,7 @@
 #define _mbpbuffer
 
 #include <Python.h>
-#include "../../mlpCCore/matrix/matrix_static.h"
+#include "mlpCCore/matrix/matrix_static.h"
 
 typedef struct mbp_topy{
     PyObject_HEAD

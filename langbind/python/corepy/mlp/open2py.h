@@ -2,9 +2,7 @@
 #define _mlpccore_pyapi
 
 #include <Python.h>
-#include "methodobject.h"
 #include "mlpCCore/mlp/mlp.h"
-#include "pytypedefs.h"
 
 //module corepy
 
@@ -29,16 +27,6 @@ DLLEXPORT PyObject *dumpmodel_frompy(PyObject *_rtime, PyObject *args, PyObject 
 //[EXPOSE]python: loadmodel(filepath: str) -> netdef
 DLLEXPORT PyObject *load_frombin(PyObject *_rtime, PyObject *args);
 
-PyTypeObject netdefpy_tpdef = {
-    PyVarObject_HEAD_INIT(0, 0)
-    .tp_basicsize = sizeof(netdefpy),
-    .tp_itemsize = 0,
-    .tp_name = "core_py.netdef",
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_new = netdefpy_new,
-    .tp_dealloc = netdefpy_dealloc,
-};
-
 //[EXPOSE] class mlptrain
 typedef struct mlpTrainStatPy{
     PyObject_HEAD
@@ -62,28 +50,20 @@ DLLEXPORT PyObject *mlptrainpy_mbackward(PyObject *self, PyObject *args);
 DLLEXPORT PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args);
 //[EXPOSE]python: mlptrain.isgradsaver() -> bool
 DLLEXPORT PyObject *mlptrainpy_mcheckgradsaver(PyObject *self, PyObject *args);
+//[EXPOSE]python: mlptrain.conv_zerobia() -> None
+DLLEXPORT PyObject *mlptrainpy_mconv_zerobia(PyObject *self, PyObject *args);
 
 static PyMethodDef mlptrainpy_memberfns[] = {
     {"execute", mlptrainpy_mexecute, METH_VARARGS, 0},
     {"backward", mlptrainpy_mbackward, METH_VARARGS, 0},
     {"finalgrads", mlptrainpy_mgetfinalgrads, METH_VARARGS, 0},
     {"isgradsaver", mlptrainpy_mcheckgradsaver, METH_VARARGS, 0},
+    {"conv_zerobia", mlptrainpy_mconv_zerobia, METH_VARARGS, 0},
     {0,0,0,0},
 };
 
-//[EXPOSE]python: savegrads(model_or_totalgrads: mlptrain, dest_totalgrads_cap: mlptrain)
+//[EXPOSE]python: savegrads(model_or_totalgrads: mlptrain, dest_totalgrads_cap: mlptrain)zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 DLLEXPORT PyObject *mlptrainpy_totalgrads_savegrads(PyObject *_rtime, PyObject *args);
-
-PyTypeObject mlptrainpy_tpdef = {
-    PyVarObject_HEAD_INIT(0, 0)
-    .tp_basicsize = sizeof(mlpTrainStatPy),
-    .tp_itemsize = 0,
-    .tp_name = "lightmlpcore_py.mlptrain",
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_new = mlptrainpy_new,
-    .tp_dealloc = mlptrainpy_dealloc,
-    .tp_methods = mlptrainpy_memberfns,
-};
 
 
 //[EXPOSE] class mlpexec
@@ -108,17 +88,6 @@ static PyMethodDef mlpexecpy_memberfns[] = {
     {0,0,0,0},
 };
 
-PyTypeObject mlpexecpy_tpdef = {
-    PyVarObject_HEAD_INIT(0,0)
-    .tp_basicsize =sizeof(mlpExecStatPy),
-    .tp_itemsize = 0,
-    .tp_name = "lightmlpcore_py.mlpexec",
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_new = mlpexecpy_new,
-    .tp_dealloc = mlpexecpy_dealloc,
-    .tp_methods = mlpexecpy_memberfns,
-    .tp_call = mlpexecpy_mexecute_opcall,
-};
 
 static PyMethodDef libcorepy_modulefns[] = {
     {"buildnet", buildnet, METH_VARARGS, "build a net descrption from 0"},
@@ -132,7 +101,6 @@ static struct PyModuleDef lmlpcore = {
     PyModuleDef_HEAD_INIT, "libcorepy", 0, 0,
     .m_methods = libcorepy_modulefns,
 };
-
 //[EXPOSE] module corepy contains enum actp(as submodule)
 //strats with 0: [ReLU, ReLU6, LeakyReLU, Sigmoid, Sigmoid_hard, Tanh, Tanh_hard, Sign, Pass]
 
