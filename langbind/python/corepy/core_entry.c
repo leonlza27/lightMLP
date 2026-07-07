@@ -50,7 +50,7 @@ PyMODINIT_FUNC PyInit_corepy(){
 
     PyObject *sub_convops = PyModule_Create(&corepy_conv);
     if (!sub_convops) goto _err_init_add_actpenum;
-    if (PyModule_AddObject(retmodule, "convop", sub_convops) < 0) goto _err_link_convop;;
+    if (PyModule_AddObject(retmodule, "convop", sub_convops) < 0) goto _err_link_convop;
 
     return retmodule;
 _err_link_convop:

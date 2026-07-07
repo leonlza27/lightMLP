@@ -1,88 +1,98 @@
 #include "convop.h"
+#include <stdint.h>
+
 #include "../qfix_ops/qfix_op.h"
 
-void conv_averpool(const qfix* restrict arrin, const uint16_t rows_in, const uint16_t cols_in,
-                    const uint16_t pool_rows, const uint16_t pool_cols, const uint16_t step, qfix* restrict arrout){
-    const uint16_t rows_out = (rows_in - pool_rows) / step + 1;
-    const uint16_t cols_out = (cols_in - pool_cols) / step + 1;
+void conv_averpool(const qfix* restrict arrin, const uint16_t rows_in, const uint16_t cols_in, const uint16_t pool_rows,
+                   const uint16_t pool_cols, const uint16_t stepr, const uint16_t stepc, qfix* restrict arrout){
+    const uint16_t rows_out = (rows_in - pool_rows) / stepr + 1;
+    const uint16_t cols_out = (cols_in - pool_cols) / stepc + 1;
 
-    const uint16_t in_rowstep = step * cols_in;
+    const uint16_t in_rowstep = stepr * cols_in;
+    
+    const qfix* in0cur = arrin;
 
-    const qfix *incur = arrin;
+    const qfix *instart = arrin;
     for(uint16_t ii = 0; ii < pool_rows; ii++){
-        incur += cols_in;   //<start> = arrin + ii * rows_out + jj, <0>ii * rows_out
+        const qfix* instart_c = instart; 
         for(uint16_t jj = 0; jj < pool_cols; jj++){
-            incur++;    //<start>, <1>+=1
-            qfix *outcur = arrout;
-            for (uint16_t i = 0; i < rows_out; i++){
-                for (uint16_t j = 0; j < cols_out; j++){
-                    outcur[j] += *incur;
-                    incur += step;
-                    outcur++;
+            qfix *arrout_cur = arrout;
+            //const qfix *arrin_rcur = arrin + cols_in * ii + jj; 
+            const qfix *arrin_rcur = instart_c;
+            for(uint16_t i = 0; i < rows_out; i++){
+                const qfix *arrin_ccur = arrin_rcur;
+                for(uint16_t j = 0; j < cols_out; j++){
+                    *arrout_cur += *arrin_ccur;
+                    arrout_cur++;
+                    arrin_ccur+=stepc;
                 }
-                outcur += cols_out;
-                incur += in_rowstep;
+                arrin_rcur+=in_rowstep;
             }
+            instart_c++;
         }
+        instart += cols_in;
     }
 
-    const uint32_t poolsize = pool_rows * pool_cols;
-    const uint32_t outsize = rows_out * cols_out;
+    const uint32_t outsize = rows_out * cols_out, poolsize = pool_cols * pool_rows;
     for(uint32_t i = 0; i < outsize; i++){
-        arrout[i] = qfix_div(arrout[i], poolsize);
+        arrout[i] /= poolsize;
+        
     }
 }
 
 void conv_maxpool(const qfix* restrict arrin, const uint16_t rows_in, const uint16_t cols_in, const uint16_t pool_rows,
-                    const uint16_t pool_cols, const uint16_t step, qfix* restrict arrout, uint16_t* idx_of_maxs){
-    const uint16_t rows_out = (rows_in - pool_rows) / step + 1;
-    const uint16_t cols_out = (cols_in - pool_cols) / step + 1;
+                    const uint16_t pool_cols, const uint16_t stepr, const uint16_t stepc, qfix* restrict arrout, uint16_t* idx_of_maxs){
+    const uint16_t rows_out = (rows_in - pool_rows) / stepr + 1;
+    const uint16_t cols_out = (cols_in - pool_cols) / stepc + 1;
 
-    const uint16_t in_rowstep = step * cols_in;
+    const uint16_t in_rowstep = stepr * cols_in;
 
     const qfix *init_incur = arrin;
     qfix *init_outcur = arrout;
     for (uint16_t i = 0; i < rows_out; i++){
         const qfix *intmp = init_incur;
         for (uint16_t j = 0; j < cols_out; j++){
-            init_outcur[j] = *intmp;
-            intmp += step;
+            *init_outcur = *intmp;
+            intmp += stepc;
+            init_outcur++;
         }
         init_incur += in_rowstep;
-        init_outcur += cols_out;
     }
 
-    const qfix *incur = arrin;
+    const qfix *instart = arrin;
+    uint16_t poolidx = 0;
     for(uint16_t ii = 0; ii < pool_rows; ii++){
-        incur += cols_in;   //<start> = arrin + ii * rows_out + jj, <0>ii * rows_out
+        const qfix* instart_c = instart; 
         for(uint16_t jj = 0; jj < pool_cols; jj++){
-            incur++;    //<start>, <1>+=1
-            qfix *outcur = arrout;
-            const uint16_t idxcur = ii * pool_cols + jj;
-            uint16_t *idxofmaxcur = idx_of_maxs;
-            for (uint16_t i = 0; i < rows_out; i++){
-                for (uint16_t j = 0; j < cols_out; j++){
-                    if(*incur > outcur[j]){
-                        outcur[j] = *incur;
-                        idxofmaxcur[j] = idxcur;
+            qfix *arrout_cur = arrout;
+            //const qfix *arrin_rcur = arrin + cols_in * ii + jj; 
+            const qfix *arrin_rcur = instart_c;
+            for(uint16_t i = 0; i < rows_out; i++){
+                const qfix *arrin_ccur = arrin_rcur;
+                for(uint16_t j = 0; j < cols_out; j++){
+                    if(*arrout_cur < *arrin_ccur){
+                        *arrout_cur = *arrin_ccur;
+                        idx_of_maxs[i * cols_out + j] = poolidx;
                     }
-                    incur += step;
-                    outcur++;
+                    arrout_cur++;
+                    arrin_ccur+=stepc;
                 }
-                outcur += cols_out;
-                idxofmaxcur += cols_out;
-                incur += in_rowstep;
+                arrin_rcur+=in_rowstep;
             }
+            instart_c++;
+            poolidx++;
         }
+        instart += cols_in;
     }
 }
 
 //gxxx/gradxxx = gradxxx
 
 void conv_averpool_backward(const qfix* restrict gradin, const uint16_t rows_gout, const uint16_t cols_gout,
-                             const uint16_t pool_rows, const uint16_t pool_cols,
-                             const uint16_t step, qfix* restrict gradout){
-    const uint16_t cols_out = (cols_gout - pool_cols) / step + 1;
+                            const uint16_t pool_rows, const uint16_t pool_cols, const uint16_t stepr,
+                            const uint16_t stepc, qfix* restrict gradout){
+    const uint16_t cols_out = (cols_gout - pool_cols) / stepc + 1;
+    const uint16_t rows_out = (rows_gout - pool_rows) / stepr + 1;
     const uint32_t poolsize = pool_rows * pool_cols;
 
     //考虑卷积核在滑动过程中出现重合(pool_rows或pool_cols<conv尺寸> > step)
@@ -94,25 +104,29 @@ void conv_averpool_backward(const qfix* restrict gradin, const uint16_t rows_gou
     }
 
     const qfix *gradin_cur = gradin;
-    for (uint16_t i = 0; i < rows_gout; i+=step){
-        for (uint16_t j = 0; j < cols_gout; j+=step){
-            const qfix gradvalue = qfix_div(*gradin_cur, poolsize);
-            for (uint16_t ii = 0; ii < pool_cols; ii++){
-                for (uint16_t jj = 0; jj < pool_cols; jj++){
-                    gradout[(ii + i) * cols_gout + jj + j] += gradvalue;
+    for(uint16_t i = 0; i < rows_out; i++){
+        for(uint16_t j = 0; j < cols_out; j++){
+            qfix gradvalue = *gradin_cur / poolsize;
+            qfix *gradout_rcur = gradout + i * stepr * cols_gout + j * stepc;
+            for(uint16_t ii = 0; ii < pool_rows; ii++){
+                qfix *gradout_ccur = gradout_rcur;
+                for(uint16_t jj = 0; jj < pool_cols; jj++){
+                    *gradout_ccur += gradvalue;
+                    gradout_ccur++;
                 }
-            }
+                gradout_rcur += cols_gout;
+            } 
             gradin_cur++;
         }
-        gradin_cur += cols_out;
     }
 }
 
-void conv_maxpool_backward(const qfix* restrict gradin, const uint16_t* idx_of_maxs,
-                            const uint16_t rows_gout, const uint16_t cols_gout,
-                            const uint16_t pool_rows, const uint16_t pool_cols,
-                            const uint16_t step, qfix* restrict gradout){
-    const uint16_t cols_out = (cols_gout - pool_cols) / step + 1;
+void conv_maxpool_backward(const qfix* restrict gradin, const uint16_t* idx_of_maxs, const uint16_t rows_gout,
+                           const uint16_t cols_gout,
+                           const uint16_t pool_rows, const uint16_t pool_cols,
+                           const uint16_t stepr, const uint16_t stepc, qfix* restrict gradout){
+    const uint16_t cols_out = (cols_gout - pool_cols) / stepc + 1;
+    const uint16_t rows_out = (rows_gout - pool_rows) / stepr + 1;
     const uint32_t poolsize = pool_rows * pool_cols;
 
     //考虑卷积核在滑动过程中出现重合(pool_rows或pool_cols<conv尺寸> > step)
@@ -123,22 +137,15 @@ void conv_maxpool_backward(const qfix* restrict gradin, const uint16_t* idx_of_m
         gradout[i] = 0;
     }
 
-    uint16_t ginidx_cur = 0;
-    for (uint16_t i = 0; i < rows_gout; i+=step){
-        for (uint16_t j = 0; j < cols_gout; j+=step){
-            const qfix gradvalue = qfix_div(gradin[ginidx_cur], poolsize);
-            const uint16_t excpidx = idx_of_maxs[ginidx_cur];
-            uint16_t curpoolidx = 0;;
-            for (uint16_t ii = 0; ii < pool_cols; ii++){
-                for (uint16_t jj = 0; jj < pool_cols; jj++){
-                    if (curpoolidx == excpidx) gradout[(ii + i) * cols_gout + jj + j] += gradvalue;
-                    curpoolidx++;
-                }
-                curpoolidx += pool_cols;
-            }
-            ginidx_cur++;
+    const qfix *gradin_cur = gradin;
+    const uint16_t* idxcur = idx_of_maxs;
+    for(uint16_t i = 0; i < rows_out; i++){
+        for(uint16_t j = 0; j < cols_out; j++){
+            const uint16_t idxr = *idxcur / pool_cols;
+            const uint16_t idxc = *idxcur % pool_cols;
+            gradout[(i * stepr + idxr) * cols_gout + j * stepc + idxc] += *gradin_cur;
+            gradin_cur++;
         }
-        ginidx_cur += cols_out;
     }
 }
 
@@ -182,5 +189,93 @@ void conv_cutedges(const qfix* restrict arrin, const uint16_t rows_in, const uin
             arrout_cur++;
         }
         arrin_cur += c_sub;
+    }
+}
+
+void conv_divelem(const qfix* restrict arrin, const uint16_t rows_in, const uint16_t cols_in, const uint16_t pool_rows,
+    const uint16_t pool_cols, const uint16_t expand, const uint16_t stepr, const uint16_t stepc, qfix** restrict arrouts){
+    const uint16_t _scale = expand + 1;
+
+    const uint16_t arrsizer = (rows_in - pool_rows * _scale + expand) / stepr;
+    const uint16_t arrsizec = (cols_in - pool_cols * _scale + expand) / stepc;
+
+    const uint16_t in_rowstep = _scale * cols_in;
+
+    qfix** outcur_ = arrouts;
+    for(uint16_t i = 0; i < arrsizer; i++){
+        for (uint16_t j = 0; j < arrsizec; j++){
+            const qfix *incur = arrin + i * stepr * cols_in + j * stepc;
+            qfix *outcur = *outcur_;
+            const qfix *incur_r = incur;
+            for (uint16_t ii = 0; ii < pool_rows; ii++){
+                const qfix* incur_c = incur_r;
+                for(uint16_t jj = 0; jj < pool_cols; jj++){
+                    *outcur = *incur_c;
+                    incur_c += _scale;
+                    outcur++;
+                }
+                incur_r += in_rowstep;
+            }
+            outcur_++;
+        }
+    }
+}
+
+void conv_mergeelem(const qfix** restrict arrin, const uint16_t rows_in, const uint16_t cols_in, const uint16_t pool_rows,
+    const uint16_t pool_cols, const uint16_t expand, const uint16_t stepr, const uint16_t stepc, qfix* restrict arrout){
+    const uint16_t _scale = expand + 1;
+
+    const uint16_t arrsizer = (rows_in - pool_rows * _scale + expand) / stepr;
+    const uint16_t arrsizec = (cols_in - pool_cols * _scale + expand) / stepc;
+
+    const uint16_t in_rowstep = _scale * cols_in;
+
+    const qfix** incur_ = arrin;
+    for(uint16_t i = 0; i < arrsizer; i++){
+        for (uint16_t j = 0; j < arrsizec; j++){
+            qfix *outcur = arrout + i * stepr * cols_in + j * stepc;
+            const qfix *incur = *incur_;
+            const qfix *outcur_r = outcur;
+            for (uint16_t ii = 0; ii < pool_rows; ii++){
+                const qfix* outcur_c = outcur_r;
+                for(uint16_t jj = 0; jj < pool_cols; jj++){
+                    *outcur += *outcur_c;
+                    outcur_c += _scale;
+                    incur++;
+                }
+                outcur_r += in_rowstep;
+            }
+            incur_++;
+        }
+    }
+}
+
+void conv_fwdcalc(const qfix* restrict arrin, const qfix* restrict convcore_w, const uint16_t rows_in,
+                  const uint16_t cols_in, const uint16_t pool_rows,
+                  const uint16_t pool_cols, const uint16_t expand, const uint16_t stepr, const uint16_t stepc, qfix* restrict arrout){
+    const uint16_t _scale = expand + 1;
+
+    const uint16_t outsizer = (rows_in - pool_rows * _scale + expand) / stepr;
+    const uint16_t outsizec = (cols_in - pool_cols * _scale + expand) / stepc;
+
+    const uint16_t in_rowstep = _scale * cols_in;
+
+    qfix *outcur = arrout;
+    for(uint16_t i = 0; i < outsizer; i++){
+        for (uint16_t j = 0; j < outsizec; j++){
+            const qfix *incur = arrin + i * stepr * cols_in + j * stepc;
+            const qfix *incur_r = incur;
+            const qfix *w_cur = convcore_w;
+            for (uint16_t ii = 0; ii < pool_rows; ii++){
+                const qfix* incur_c = incur_r;
+                for(uint16_t jj = 0; jj < pool_cols; jj++){
+                    *outcur += qfix_mul(*incur_c, *w_cur);
+                    incur_c += _scale;
+                    w_cur++;
+                }
+                incur_r += in_rowstep;
+            }
+            outcur++;
+        }
     }
 }
