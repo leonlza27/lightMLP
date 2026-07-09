@@ -196,8 +196,8 @@ void conv_divelem(const qfix* restrict arrin, const uint16_t rows_in, const uint
     const uint16_t pool_cols, const uint16_t expand, const uint16_t stepr, const uint16_t stepc, qfix** restrict arrouts){
     const uint16_t _scale = expand + 1;
 
-    const uint16_t arrsizer = (rows_in - pool_rows * _scale + expand) / stepr;
-    const uint16_t arrsizec = (cols_in - pool_cols * _scale + expand) / stepc;
+    const uint16_t arrsizer = (rows_in - pool_rows * _scale + expand) / stepr + 1;
+    const uint16_t arrsizec = (cols_in - pool_cols * _scale + expand) / stepc + 1;
 
     const uint16_t in_rowstep = _scale * cols_in;
 
@@ -221,25 +221,25 @@ void conv_divelem(const qfix* restrict arrin, const uint16_t rows_in, const uint
     }
 }
 
-void conv_mergeelem(const qfix** restrict arrin, const uint16_t rows_in, const uint16_t cols_in, const uint16_t pool_rows,
+void conv_mergeelem(const qfix** restrict arrin, const uint16_t rows_to, const uint16_t cols_to, const uint16_t pool_rows,
     const uint16_t pool_cols, const uint16_t expand, const uint16_t stepr, const uint16_t stepc, qfix* restrict arrout){
     const uint16_t _scale = expand + 1;
 
-    const uint16_t arrsizer = (rows_in - pool_rows * _scale + expand) / stepr;
-    const uint16_t arrsizec = (cols_in - pool_cols * _scale + expand) / stepc;
+    const uint16_t arrsizer = (rows_to - pool_rows * _scale + expand) / stepr + 1;
+    const uint16_t arrsizec = (cols_to - pool_cols * _scale + expand) / stepc + 1;
 
-    const uint16_t in_rowstep = _scale * cols_in;
+    const uint16_t in_rowstep = _scale * cols_to;
 
     const qfix** incur_ = arrin;
     for(uint16_t i = 0; i < arrsizer; i++){
         for (uint16_t j = 0; j < arrsizec; j++){
-            qfix *outcur = arrout + i * stepr * cols_in + j * stepc;
+            qfix *outcur = arrout + i * stepr * cols_to + j * stepc;
             const qfix *incur = *incur_;
-            const qfix *outcur_r = outcur;
+            qfix *outcur_r = outcur;
             for (uint16_t ii = 0; ii < pool_rows; ii++){
-                const qfix* outcur_c = outcur_r;
+                qfix* outcur_c = outcur_r;
                 for(uint16_t jj = 0; jj < pool_cols; jj++){
-                    *outcur += *outcur_c;
+                    *outcur_c += *incur;
                     outcur_c += _scale;
                     incur++;
                 }
@@ -255,8 +255,8 @@ void conv_fwdcalc(const qfix* restrict arrin, const qfix* restrict convcore_w, c
                   const uint16_t pool_cols, const uint16_t expand, const uint16_t stepr, const uint16_t stepc, qfix* restrict arrout){
     const uint16_t _scale = expand + 1;
 
-    const uint16_t outsizer = (rows_in - pool_rows * _scale + expand) / stepr;
-    const uint16_t outsizec = (cols_in - pool_cols * _scale + expand) / stepc;
+    const uint16_t outsizer = (rows_in - pool_rows * _scale + expand) / stepr + 1;
+    const uint16_t outsizec = (cols_in - pool_cols * _scale + expand) / stepc + 1;
 
     const uint16_t in_rowstep = _scale * cols_in;
 

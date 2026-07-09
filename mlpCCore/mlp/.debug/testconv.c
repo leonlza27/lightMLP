@@ -1,6 +1,6 @@
-#include "convop.h"
+#include "../convop.h"
 #include <stdio.h>
-#include "../qfix_ops/qfix_op.h"
+#include "../../qfix_ops/qfix_op.h"
 
 int main(){
     qfix input[16];

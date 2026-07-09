@@ -1,6 +1,5 @@
-#include "ac_callback.h"
-#include "../matrix/matrix_static.c"
-#include "mlp.h"
+#include "../../matrix/matrix_static.c"
+#include "../mlp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>

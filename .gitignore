@@ -3,3 +3,5 @@
 /.idea
 /langbind/python/.debug/
 /mlpCCore/mlp_vunstaible.zip
+/build
+.cache

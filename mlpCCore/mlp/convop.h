@@ -28,7 +28,7 @@ void DLLEXPORT conv_divelem(const qfix *arrin, const uint16_t rows_in, const uin
                                         const uint16_t pool_rows, const uint16_t pool_cols, const uint16_t expand,
                                         const uint16_t stepr, const uint16_t stepc, qfix **arrouts);
 
-void DLLEXPORT conv_mergeelem(const qfix **arrin, const uint16_t rows_in, const uint16_t cols_in,
+void DLLEXPORT conv_mergeelem(const qfix **arrin, const uint16_t rows_to, const uint16_t cols_to,
                                         const uint16_t pool_rows, const uint16_t pool_cols, const uint16_t expand,
                                         const uint16_t stepr, const uint16_t stepc, qfix *arrout);
 
