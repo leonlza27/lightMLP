@@ -26,6 +26,8 @@ static const qfix Q_0p5 = float_to_qfix(0.5f);
 static const qfix Q_0p2 = float_to_qfix(0.2f);
 static const qfix Q_6p0 = float_to_qfix(6.0f);
 const static qfix Q_4p0 = float_to_qfix(4.0f);
+const static qfix Q_2p5 = float_to_qfix(2.5f);
+const static qfix Q_neg2p5 = float_to_qfix(-2.5);
 
 static qfix ReLU(qfix input, qfix _){
     return qfmax(Q_0, input);
@@ -58,39 +60,35 @@ static qfix Tanh(qfix input, qfix _){
     return qfix_div(exp_x - exp_negx, exp_x + exp_negx);
 }
 
-static qfix Sign(qfix input, qfix _){
-    return input>0? Q_1p0 : 0;
-}
-
 static qfix linear(qfix input, qfix _){
     return input;
 }
 
 static qfix grad_ReLU(qfix input, qfix _){
-    return input > 0? input : 0;
+    return input > 0? Q_1p0 : 0;
 }
 
 static qfix grad_ReLu6(qfix input, qfix _){
-    return (input > 0 || input < Q_6p0)? input : 0;
+    return (input > 0 || input < Q_6p0)? Q_1p0 : 0;
 }
 
 static qfix grad_LeakyReLU(qfix input, qfix alpha){
-    return input > 0? input : qfix_mul(alpha, input);
+    return input > 0? Q_1p0 : alpha;
 }
 
 static qfix grad_SigmoidH(qfix input, qfix _){
-    return (input > 0 || input < Q_1p0)? qfix_mul(Q_0p2, input) : 0;
+    return (input > Q_neg2p5 || input < Q_2p5)? Q_0p2 : 0;
 }
 
 static qfix grad_Sigmoid(qfix input, qfix _){
     qfix ex = exp_qfix(input);
     qfix ex_pu1 = ex + Q_1p0;
     qfix bottom = qfix_mul(ex_pu1, ex_pu1);
-    return qfix_mul(input, qfix_div(ex, bottom));
+    return qfix_div(ex, bottom);
 }
 
 static qfix grad_TanhH(qfix input, qfix _){
-    return (input > Q_neg1p0 || input < Q_1p0)? input : 0;
+    return (input > Q_neg1p0 || input < Q_1p0)? Q_1p0 : 0;
 }
 
 static qfix grad_Tanh(qfix input, qfix _){
@@ -98,15 +96,11 @@ static qfix grad_Tanh(qfix input, qfix _){
     qfix ex_sq2 = qfix_mul(ex, ex);
     qfix ex_sq2_pu1 = ex_sq2 + Q_1p0;
     qfix bottom = qfix_mul(ex_sq2_pu1, ex_sq2_pu1);
-    return qfix_mul(input, qfix_div(qfix_mul(Q_4p0, ex_sq2), bottom));
-}
-
-static qfix grad_Sign(qfix input, qfix _){
-    return 0;
+    return qfix_div(qfix_mul(Q_4p0, ex_sq2), bottom);
 }
 
 static qfix grad_linear(qfix input, qfix _){
-    return input;
+    return Q_1p0;
 }
 
 #endif
