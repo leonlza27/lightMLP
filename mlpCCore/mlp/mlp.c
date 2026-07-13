@@ -4,12 +4,12 @@ void mlptrainer_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
     dest->calclyrs = calclyrs;
     dest->modelsrc = net;
 
-    size_t all_size = (calclyrs * 3 + 2) * sizeof(qfix*);
+    size_t all_size = (calclyrs * 4 + 2) * sizeof(qfix*);
 
     for(uint32_t i = 0; i < calclyrs; i++){
         const uint16_t indim = net[i].in_dim;
         const uint16_t outdim = net[i].out_dim;
-        all_size += (outdim + indim + outdim * indim) * sizeof(qfix);
+        all_size += (outdim * 2 + indim + outdim * indim) * sizeof(qfix);
     }
 
     char *fullmem = malloc(all_size);
@@ -20,18 +20,22 @@ void mlptrainer_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
 
     dest->fullConnData = (qfix**)fullmem;
     fullmem += sizeof(qfix*) * (calclyrs + 1);
+    dest->va_wxb = (qfix**)fullmem;
+    fullmem += sizeof(qfix*) * calclyrs;
     dest->lyrinput_grad = (qfix**)fullmem;
     fullmem += sizeof(qfix*) * (calclyrs + 1);
     dest->w_grad = (qfix**)fullmem;
     fullmem += sizeof(qfix*) * calclyrs;
 
     for(uint32_t i = 0; i < calclyrs; i++){
-        uint16_t indim = net[i].in_dim;
-        uint16_t outdim = net[i].out_dim;
+        const uint16_t indim = net[i].in_dim;
+        const uint16_t outdim = net[i].out_dim;
         //dest->fullConnData[i + 1] = (qfix*)malloc(sizeof(qfix) * outdim);
         //dest->lyrinput_grad[i] = (qfix*)malloc(sizeof(qfix) * indim);
         //dest->w_grad[i] = (qfix*)malloc(sizeof(qfix) * indim * outdim);
         dest->fullConnData[i + 1] = (qfix*)fullmem;
+        fullmem += sizeof(qfix) * outdim;
+        dest->va_wxb[i] = (qfix*)fullmem;
         fullmem += sizeof(qfix) * outdim;
         dest->lyrinput_grad[i] = (qfix*)fullmem;
         fullmem += sizeof(qfix) * indim;
@@ -90,14 +94,15 @@ void mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrai
     char *fullmem = malloc(all_size);
 
     dest->fullConnData = 0;
+    dest->va_wxb = 0;
     dest->lyrinput_grad = (qfix**)fullmem;
     fullmem += sizeof(qfix*) * (calclyrs + 1);
     dest->w_grad = (qfix**)fullmem;
     fullmem += sizeof(qfix*) * calclyrs;
 
     for(uint32_t i = 0; i < calclyrs; i++){
-        uint16_t indim = net[i].in_dim;
-        uint16_t outdim = net[i].out_dim;
+        const uint16_t indim = net[i].in_dim;
+        const uint16_t outdim = net[i].out_dim;
         dest->lyrinput_grad[i] = (qfix*)fullmem;
         fullmem += sizeof(qfix) * indim;
         dest->w_grad[i] = (qfix*)fullmem;
@@ -134,7 +139,7 @@ void mlpexec_cleanup(mlpExecStatus *net){
     net->modelsrc = 0;
 }
 */
-void mlpexec_setup(uint32_t calclyrs ,netLyrConf *net, mlpExecStatus *dest){
+void mlpexec_setup(const uint32_t calclyrs ,const netLyrConf *net, mlpExecStatus *dest){
     dest->calclyrs = calclyrs;
     dest->modelsrc = net;
     uint16_t outdim_max = 0;
@@ -152,7 +157,7 @@ void mlpexec_cleanup(mlpExecStatus *net){
     net->calclyrs = 0;
 }
 
-void mlptrainer_totalgrads_savegrads(mlpTrainStatus *net_or_gradcap, mlpTrainStatus *gradscap_dest){
+void mlptrainer_totalgrads_savegrads(const mlpTrainStatus *net_or_gradcap, const mlpTrainStatus *gradscap_dest){
     const uint32_t size = net_or_gradcap->calclyrs;
     const netLyrConf *nsrc = net_or_gradcap->modelsrc;
     for(uint32_t i = 0; i < size; i++){
@@ -171,7 +176,7 @@ void mlptrainer_totalgrads_savegrads(mlpTrainStatus *net_or_gradcap, mlpTrainSta
 }
 
 
-void mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr){
+void mlptrainer_backward(const mlpTrainStatus *model, const qfix *grad_inital, const qfix lr){
     const uint32_t size = model->calclyrs;
     const netLyrConf *nsrc = &model->modelsrc[size - 1];
     model->lyrinput_grad[size] = grad_inital;
@@ -203,7 +208,7 @@ void mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr){
         const qfix *gi_ref = grad_in;
         qfix *gw_cur = wgrad_cur;
         const qfix *x_last = model->fullConnData[curidx];
-        const qfix *x_ac = model->fullConnData[l];
+        const qfix *x_ac = model->va_wxb[curidx];
         qfix *wcur = w_this;
         for(uint16_t i = 0; i < outdi; i++){
             const qfix grad_cur = qfix_mul(*gi_ref ,gradfn(*x_ac, dext));
@@ -225,7 +230,7 @@ void mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr){
     }
 }
 
-void mlptrainer_totalgrads_backward(mlpTrainStatus *model, mlpTrainStatus *gradscap, qfix lr){
+void mlptrainer_totalgrads_backward(const mlpTrainStatus *model, const mlpTrainStatus *gradscap, const qfix lr){
     const uint32_t size = model->calclyrs;
     const netLyrConf *nsrc = model->modelsrc;
     for(uint32_t i = 0; i < size; i++){
@@ -251,11 +256,11 @@ void mlptrainer_totalgrads_backward(mlpTrainStatus *model, mlpTrainStatus *grads
  *  [indim = n<conv_size> , outdim = 1]
  */
 
-void mlptrainer_convcalc_zerobia(mlpTrainStatus* model){
+void mlptrainer_convcalc_zerobia(const mlpTrainStatus* model){
     model->modelsrc->bias[0] = 0;
 }
 
-void mlptrainer_execute(mlpTrainStatus *model, qfix *arrin){
+void mlptrainer_execute(const mlpTrainStatus *model, const qfix *arrin){
     const uint32_t size = model->calclyrs;
     model->fullConnData[0] = arrin;
     const netLyrConf *nsrc = model->modelsrc;
@@ -283,7 +288,8 @@ void mlptrainer_execute(mlpTrainStatus *model, qfix *arrin){
             default: acfn = linear; break;
         }
 
-        qfix *wcurr = wcur;
+        const qfix *wcurr = wcur;
+        qfix *oriout_cur = model->va_wxb[i];
         for(uint16_t ii = 0; ii < outdi; ii++){
             _tmp_larger sumw = 0;
             for(uint16_t j = 0; j < indi; j++){
@@ -291,9 +297,12 @@ void mlptrainer_execute(mlpTrainStatus *model, qfix *arrin){
                 wcurr++;
                 in++;
             }
-            *out = acfn((sumw >> QSHIFT) + *bcur, dext);
+            qfix cur = (sumw >> QSHIFT) + *bcur;
+            *oriout_cur = cur;
+            *out = acfn(cur, dext);
             bcur++;
             out++;
+            oriout_cur++;
             in -= indi;
         }
 
@@ -301,9 +310,9 @@ void mlptrainer_execute(mlpTrainStatus *model, qfix *arrin){
     }
 }
 
-void mlpexec_execute(mlpExecStatus *model, qfix *arrin){
-    uint32_t size = model->calclyrs;
-    netLyrConf *nsrc = model->modelsrc;
+void mlpexec_execute(const mlpExecStatus *model, const qfix *arrin){
+    const uint32_t size = model->calclyrs;
+    const netLyrConf *nsrc = model->modelsrc;
     qfix** fcd_export = model->fullConnData_tmp;
     acCall acfn;
     uint32_t i = 0;
@@ -318,9 +327,9 @@ void mlpexec_execute(mlpExecStatus *model, qfix *arrin){
         in = fcd_export[i%2];
     _norm_exec:
         out = fcd_export[(i + 1)%2];
-        qfix *wcur = nsrc->weights;
-        qfix *bcur = nsrc->bias;
-        qfix dext = nsrc->dExtra;
+        const qfix *wcur = nsrc->weights;
+        const qfix *bcur = nsrc->bias;
+        const qfix dext = nsrc->dExtra;
 
         uint16_t indi = nsrc->in_dim;
         uint16_t outdi = nsrc->out_dim;
@@ -337,7 +346,7 @@ void mlpexec_execute(mlpExecStatus *model, qfix *arrin){
             default: acfn = linear; break;
         }
 
-        qfix *wcurr = wcur;
+        const qfix *wcurr = wcur;
         for(uint16_t ii = 0; ii < outdi; ii++){
             _tmp_larger sumw = 0;
             for(uint16_t j = 0; j < indi; j++){
