@@ -3,8 +3,8 @@
 
 #define lmlpBINMARK "lightmlp_model"
 //in mlp.h, for shared library object independence
-struct _netlyrcnf;
-typedef struct _netlyrcnf netLyrConf;
+struct netLyrConf;
+typedef struct netLyrConf netLyrConf;
 #include <stdint.h>
 #if defined(_WIN32) && defined(_MSC_VER)
 #define DLLEXPORT _declspec(dllexport)

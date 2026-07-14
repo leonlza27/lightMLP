@@ -2,15 +2,14 @@
 #define _mlp_core
 
 #include "../CustomConf.h"
-#include "ac_callback.h"
-#include <stdlib.h>
+#include "builtin_ac_callback.h"
 
 #ifdef CORE_DBG
 #undef DLLEXPORT
 #define DLLEXPORT
 #endif
 
-typedef struct _netlyrcnf{
+typedef struct netLyrConf{
     uint8_t acTp;
     uint16_t in_dim, out_dim;
     qfix *weights, *bias, dExtra;

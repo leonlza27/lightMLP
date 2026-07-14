@@ -1,5 +1,6 @@
 #include "mlp/open2py.h"
 #include "conv/convop_topy.h"
+#include "mlpCCore/mlp/builtin_ac_callback.h"
 
 PyTypeObject *mbp_tpdef_ref;
 
@@ -42,7 +43,7 @@ PyMODINIT_FUNC PyInit_corepy(){
     if(PyModule_AddObject(actpenum_topy, "Sigmoid_hard", PyLong_FromLong(ac_Sigmoid_hard)) < 0) goto _err_init_add_actpenum;
     if(PyModule_AddObject(actpenum_topy, "Tanh", PyLong_FromLong(ac_Tanh)) < 0) goto _err_init_add_actpenum;
     if(PyModule_AddObject(actpenum_topy, "Tanh_hard", PyLong_FromLong(ac_Tanh_hard)) < 0) goto _err_init_add_actpenum;
-    if(PyModule_AddObject(actpenum_topy, "Sign", PyLong_FromLong(ac_Sign)) < 0) goto _err_init_add_actpenum;
+    if(PyModule_AddObject(actpenum_topy, "TripleLine", PyLong_FromLong(ac_TripleLine)) < 0) goto _err_init_add_actpenum;
     if(PyModule_AddObject(actpenum_topy, "Pass", PyLong_FromLong(ac_pass)) < 0) goto _err_init_add_actpenum;
 
     //link the enums

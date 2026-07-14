@@ -1,4 +1,6 @@
 #include "mlp.h"
+#include "builtin_ac_callback.h"
+
 
 void mlptrainer_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
     dest->calclyrs = calclyrs;
@@ -201,6 +203,7 @@ void mlptrainer_backward(const mlpTrainStatus *model, const qfix *grad_inital, c
             case ac_Sigmoid_hard: gradfn = grad_SigmoidH; break;
             case ac_Tanh: gradfn = grad_Tanh; break;
             case ac_Tanh_hard: gradfn = grad_TanhH; break;
+            case ac_TripleLine: gradfn = grad_TripleLine; break;
             case ac_pass:
             default: gradfn = grad_linear; break;
         }
@@ -284,6 +287,7 @@ void mlptrainer_execute(const mlpTrainStatus *model, const qfix *arrin){
             case ac_Sigmoid_hard: acfn = SigmoidH; break;
             case ac_Tanh: acfn = Tanh; break;
             case ac_Tanh_hard: acfn = TanhH; break;
+            case ac_TripleLine: acfn = TripleLine; break;
             case ac_pass:
             default: acfn = linear; break;
         }
@@ -342,6 +346,7 @@ void mlpexec_execute(const mlpExecStatus *model, const qfix *arrin){
             case ac_Sigmoid_hard: acfn = SigmoidH; break;
             case ac_Tanh: acfn = Tanh; break;
             case ac_Tanh_hard: acfn = TanhH; break;
+            case ac_TripleLine: acfn = TripleLine; break;
             case ac_pass:
             default: acfn = linear; break;
         }
