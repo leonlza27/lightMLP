@@ -212,7 +212,7 @@ void mlptrainer_backward(const mlpTrainStatus *model, const qfix *grad_inital, c
         qfix *gw_cur = wgrad_cur;
         const qfix *x_last = model->fullConnData[curidx];
         const qfix *x_ac = model->va_wxb[curidx];
-        qfix *wcur = w_this;
+        const qfix *wcur = w_this;
         for(uint16_t i = 0; i < outdi; i++){
             const qfix grad_cur = qfix_mul(*gi_ref ,gradfn(*x_ac, dext));
             for(uint16_t j = 0; j < indi; j++){
@@ -227,7 +227,7 @@ void mlptrainer_backward(const mlpTrainStatus *model, const qfix *grad_inital, c
         }
 
         const uint32_t wsize = outdi * indi;
-        for(uint32_t i = 0; i < wsize; i++) wcur[i] += qfix_mul(lr, wgrad_cur[i]);
+        for(uint32_t i = 0; i < wsize; i++) w_this[i] += qfix_mul(lr, wgrad_cur[i]);
 
         nsrc--;
     }

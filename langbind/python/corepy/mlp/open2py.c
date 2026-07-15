@@ -249,7 +249,7 @@ PyObject *mlptrainpy_mexecute(PyObject *self, PyObject *args){
     if(!PyArg_ParseTuple(args, "O!|O!", mbp_tpdef_ref, &vecin, mbp_tpdef_ref, &ret)) goto _err_ret;
     uint16_t outdim = obj->modelsrc->nstruct[obj->modelsrc->lyrcnt - 1].out_dim;
     if(!ret) goto _allocate_mbppy_if_0;
-    //Py_INCREF(ret);
+    Py_INCREF(ret);
     goto _actual_exec;
 
 _allocate_mbppy_if_0:
@@ -298,7 +298,7 @@ PyObject *mlptrainpy_mgetfinalgrads(PyObject *self, PyObject *args){
     if(!PyArg_ParseTuple(args, "|O!", mbp_tpdef_ref, &ret)) goto _err_ret;
     uint16_t indim = obj->modelsrc->nstruct[0].in_dim;
     if(!ret) goto _allocate_mbppy_if_0;
-    //Py_INCREF(ret);
+    Py_INCREF(ret);
     goto _actual_exec;
 
 _allocate_mbppy_if_0:
@@ -356,7 +356,7 @@ PyObject *mlpexecpy_mexecute(PyObject *self, PyObject *args){
     if(!PyArg_ParseTuple(args, "O!|O!", mbp_tpdef_ref, &vecin, mbp_tpdef_ref, &ret)) goto _err_ret;
     uint16_t outdim = obj->modelsrc->nstruct[obj->modelsrc->lyrcnt - 1].out_dim;
     if(!ret) goto _allocate_mbppy_if_0;
-    //Py_INCREF(ret);
+    Py_INCREF(ret);
     goto _actual_exec;
 
 _allocate_mbppy_if_0:
