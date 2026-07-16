@@ -3,4 +3,4 @@
 #and use the cmake script carefully
 
 add_subdirectory(python)
-add_subdirectory(java/.jnibind)
+add_subdirectory(java)

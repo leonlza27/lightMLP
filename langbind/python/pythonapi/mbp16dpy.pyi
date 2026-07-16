@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Tuple
 
 class matrixbp:
     def __init__(self, rows: int, cols: int) -> None: ...

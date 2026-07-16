@@ -73,6 +73,14 @@ JNIEXPORT void JNICALL Java_core_mlptrain_get_1grad2last
 
 /*
  * Class:     core_mlptrain
+ * Method:    conv_zerobia
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_core_mlptrain_conv_1zerobia
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     core_mlptrain
  * Method:    isGradSaver
  * Signature: ()Z
  */

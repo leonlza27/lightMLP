@@ -23,6 +23,7 @@ public class mlptrain{
     public native void savegrads_to(mlptrain gradscap);
     public native void backward_from_totalgrads(mlptrain gradscap, float lr);
     public native void get_grad2last(matrixbp gradtolast);
+    public native void conv_zerobia();
 
     public native boolean isGradSaver();
 
