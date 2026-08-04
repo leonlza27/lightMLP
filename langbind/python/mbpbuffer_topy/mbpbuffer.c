@@ -7,6 +7,7 @@ PyObject *mbp_new(PyTypeObject *tp, PyObject *args, PyObject *kwargs){
     matrix_bp mnew = alloc_matrix_bp(rows, cols);
     if(!obnew || !mnew) return 0;
     obnew->info = mnew;
+    obnew->orisize = rows * cols;
     return (PyObject*) obnew;
 }
 
@@ -129,4 +130,39 @@ PyObject *mbp_tolist(PyObject *self, PyObject *args, PyObject *args_dict){
         PyList_SetItem(retlst, i, vacur);
     }
     return retlst;
+}
+
+PyObject* mbp_shape(PyObject* self, PyObject* args){
+    matrixbp_py *obj = (matrixbp_py*)self;
+    PyObject *obret =  Py_BuildValue("(ii)", obj->info->rows, obj->info->cols);
+    Py_INCREF(obret);
+    return obret;
+}
+
+PyObject* mbp_capacity(PyObject* self, PyObject* args){
+    matrixbp_py *obj = (matrixbp_py*)self;
+    PyObject *obret = PyLong_FromLong(obj->orisize);
+    Py_INCREF(obret);
+    return obret;
+}
+
+PyObject* mbp_index(PyObject* self, PyObject* args){
+    matrixbp_py *obj = (matrixbp_py*)self;
+    PyObject *obin;
+    if(!PyArg_ParseTuple(args, "O", &obin)) return 0;
+    uint16_t r, c;
+    PyObject *obret;
+    if (!PyTuple_Check(obin)) goto _int;
+    if (!PyArg_ParseTuple(obin, "ii", &r, &c)) return 0;
+    obret = PyFloat_FromDouble(qfix_to_float(obj->info->data[r * obj->info->cols + c]));
+    goto _ret;
+    _int:
+    if (!PyLong_Check(obin)){
+        PyErr_SetString(PyExc_TypeError, "key must a int or tuple[int, int]");
+        return 0;
+    }
+    obret = PyFloat_FromDouble(qfix_to_float64(obj->info->data[PyLong_AsLong(obin)]));
+    _ret:
+    Py_INCREF(obret);
+    return obret;
 }

@@ -2,15 +2,14 @@
 #define _mlp_core
 
 #include "../CustomConf.h"
-#include "ac_callback.h"
-#include <stdlib.h>
+#include "builtin_ac_callback.h"
 
 #ifdef CORE_DBG
 #undef DLLEXPORT
 #define DLLEXPORT
 #endif
 
-typedef struct _netlyrcnf{
+typedef struct netLyrConf{
     uint8_t acTp;
     uint16_t in_dim, out_dim;
     qfix *weights, *bias, dExtra;
@@ -19,7 +18,8 @@ typedef struct _netlyrcnf{
 typedef struct _mlp_train_status{
     uint32_t calclyrs; 
     netLyrConf *modelsrc;
-    qfix **fullConnData; //0为梯度累积器
+    qfix **fullConnData;    //0为梯度累积器
+    qfix **va_wxb;          //激活前原始数据用于反向,累计器同样为0
     qfix **w_grad;
     qfix **lyrinput_grad;
 }mlpTrainStatus;
@@ -30,20 +30,31 @@ typedef struct _mlp_exec_status{
     qfix *fullConnData_tmp[2];
 }mlpExecStatus;
 
-void DLLEXPORT mlptrainer_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest);
-void DLLEXPORT mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest);
+void DLLEXPORT mlptrainer_setup(const uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest);
+void DLLEXPORT mlptrainer_totalgrads_cap_setup(const uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest);
 void DLLEXPORT mlptrainer_cleanup(mlpTrainStatus *net);
- 
-void DLLEXPORT mlptrainer_totalgrads_savegrads(mlpTrainStatus *net_or_gradcap, mlpTrainStatus *gradscap_dest);
+void DLLEXPORT mlptrainer_execute(const mlpTrainStatus *model, const qfix *arrin);
 
-void DLLEXPORT mlptrainer_backward(mlpTrainStatus *model, qfix *grad_inital, qfix lr);
-void DLLEXPORT mlptrainer_totalgrads_backward(mlpTrainStatus *model, mlpTrainStatus *gradscap, qfix lr);
-void DLLEXPORT mlptrainer_execute(mlpTrainStatus *model, qfix *arrin);
+//支持数据并行
 
-void DLLEXPORT mlpexec_setup(uint32_t calclyrs ,netLyrConf *net, mlpExecStatus *dest);
+void DLLEXPORT mlptrainer_totalgrads_savegrads(const mlpTrainStatus* net_or_gradcap,
+                                               const mlpTrainStatus* gradscap_dest);
+
+void DLLEXPORT mlptrainer_backward(const mlpTrainStatus *model, const qfix *grad_inital, const qfix lr);
+void DLLEXPORT mlptrainer_totalgrads_backward(const mlpTrainStatus *model, const mlpTrainStatus *gradscap, const qfix lr);
+
+//给卷积用的
+
+void DLLEXPORT mlptrainer_convcalc_zerobia(const mlpTrainStatus *model);
+
+#define mlptrain_finalgrads_ref(mlptrain) (mlptrain)->lyrinput_grad[0]
+#define mlptrain_resu_ref(mlptrain) (mlptrain)->fullConnData[(mlptrain)->calclyrs]
+
+void DLLEXPORT mlpexec_setup(const uint32_t calclyrs ,const netLyrConf *net, mlpExecStatus *dest);
 void DLLEXPORT mlpexec_cleanup(mlpExecStatus *net);
 
-void DLLEXPORT mlpexec_execute(mlpExecStatus *model, qfix *arrin);
+void DLLEXPORT mlpexec_execute(const mlpExecStatus *model, const qfix *arrin);
 
+#define mlpexec_resu_ref(mlpexec) mlpexec->fullConnData_tmp[((mlpexec)->calclyrs + 1) % 2]
 
 #endif

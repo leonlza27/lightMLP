@@ -6,13 +6,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__/py_bind)
 
 link_directories(${PROJECT_BINARY_DIR}/__out__/core)
 
-add_library(mbpbuffer SHARED mbpbuffer.c)
-add_library(corepy MODULE open2py.c)
-add_library(mbp16dpy MODULE matrixbp2py.c mbpbuffer.c)
+add_library(mbpbuffer SHARED mbpbuffer_topy/mbpbuffer.c)
+add_library(corepy MODULE corepy/mlp/open2py.c corepy/conv/convop_topy.c corepy/core_entry.c)
+add_library(mbp16dpy MODULE mbpbuffer_topy/matrixbp2py.c mbpbuffer_topy/mbpbuffer.c)
 
-target_include_directories(corepy PRIVATE ${PROJECT_SOURCE_DIR})
-target_include_directories(mbp16dpy PRIVATE ${PROJECT_SOURCE_DIR})
-target_include_directories(mbpbuffer PRIVATE ${PROJECT_SOURCE_DIR})
+target_include_directories(corepy PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/langbind/python)
+target_include_directories(mbp16dpy PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/langbind/python)
+target_include_directories(mbpbuffer PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/langbind/python)
 
 target_link_libraries(mbpbuffer PRIVATE matrix_static Python::Python)
 target_link_libraries(mbp16dpy PRIVATE mbpbuffer matrix_static Python::Python)

@@ -176,6 +176,16 @@ JNIEXPORT void JNICALL Java_core_mlptrain_get_1grad2last(JNIEnv *env, jobject _t
     jnienvcall->ReleaseByteArrayElements(env, vecouto, (jbyte*)vecout, 0);
 }
 
+JNIEXPORT void JNICALL Java_core_mlptrain_conv_1zerobia(JNIEnv *env, jobject _this){
+    jclass mlptrain_jdef = idx_javaclass_ob(_this);
+
+    jfieldID mlptrain_exechandle = jnienvcall->GetFieldID(env, mlptrain_jdef, "train_exahandle", "J");
+    jlong _net = jnienvcall->GetLongField(env, _this, mlptrain_exechandle);
+    mlpTrainStatus *net = _reinterpt(mlpTrainStatus*, _net);
+
+    mlptrainer_convcalc_zerobia(net);
+}
+
 JNIEXPORT jboolean JNICALL Java_core_mlptrain_isGradSaver(JNIEnv *env, jobject _this){
     jclass mlptrain_jdef = idx_javaclass_ob(_this);
 

@@ -6,7 +6,7 @@ import core.mlptrain;
 
 public class test_train{
     public static void main(String []args){
-        netlyr []modeldef = {new netlyr(2,3,netlyr.actp.ac_Sigmoid,0.0f), new netlyr(3,1,netlyr.actp.ac_Sigmoid,0.0f)};
+        netlyr []modeldef = {new netlyr(2,3,netlyr.actp.Sigmoid,0.0f), new netlyr(3,1,netlyr.actp.Sigmoid,0.0f)};
 	System.out.println("Setup netdef\n");
         netdef ndef = new netdef();
         ndef.setup_ndef(modeldef);

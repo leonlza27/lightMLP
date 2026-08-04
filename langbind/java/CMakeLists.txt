@@ -26,7 +26,7 @@ ELSEIF (APPLE)
 ENDIF ()
 
 add_library(mbp_tojava SHARED mbp/mbpops_tojava.c mbp/mbpstruct_tojava.c)
-add_library(lmlpcore_tojava SHARED core/mlpcore_tojava.c core/netdef_tojava.c)
+add_library(lmlpcore_tojava SHARED core/mlpcore_tojava.c core/netdef_tojava.c core/convop_tojava.c)
 
 target_include_directories(mbp_tojava PRIVATE ${PROJECT_SOURCE_DIR} ${JAVA_INCLUDE} ${JAVA_INCLUDE_OS})
 target_include_directories(lmlpcore_tojava PRIVATE ${PROJECT_SOURCE_DIR} ${JAVA_INCLUDE} ${JAVA_INCLUDE_OS})
