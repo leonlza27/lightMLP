@@ -48,8 +48,8 @@ void matrix_bp_mulpty(const matrix_bp_data *mmul1, const matrix_bp_data *mmul2, 
 }
 
 void matrix_bp_transpose(const matrix_bp_data *source, matrix_bp_data *dest){
-    dest->cols = source->cols;
-    dest->rows = source->rows;
+    dest->rows = source->cols;
+    dest->cols = source->rows;
     arr_mtpose(source->data, source->rows, source->cols, dest->data);
 }
 

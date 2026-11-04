@@ -6,6 +6,11 @@ cmake_minimum_required(VERSION 3.30.5)
 
 project(lightMLP)
 
+#源码均为UTF-8(含中文注释), MSVC需显式指定编码, 否则在非UTF-8代码页下会误解析
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/__out__)
