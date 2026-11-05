@@ -46,41 +46,6 @@ void mlptrainer_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
     }
 }
 
-/*
-void mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest){
-    dest->calclyrs = calclyrs;
-    dest->modelsrc = net;
-    
-    dest->fullConnData = 0;
-    dest->lyrinput_grad = (qfix**)malloc(sizeof(qfix*) * (calclyrs + 1));
-    dest->w_grad = (qfix**)malloc(sizeof(qfix*) * calclyrs);
-
-    for(uint32_t i = 0; i < calclyrs; i++){
-        uint16_t indim = net[i].in_dim;
-        uint16_t outdim = net[i].out_dim;
-        dest->lyrinput_grad[i] = (qfix*)malloc(sizeof(qfix*) * indim);
-        dest->w_grad[i] = (qfix*)malloc(sizeof(qfix) * indim * outdim);
-    }
-}
-
-void mlptrainer_cleanup(mlpTrainStatus *net){
-    uint32_t size = net->calclyrs;
-    for(uint32_t i = 0; i < size; i++){
-        free(net->lyrinput_grad[i]);
-        free(net->w_grad[i]);
-    }
-    free(net->lyrinput_grad);
-    free(net->w_grad);
-    if(!net->fullConnData) goto _ret;
-    for(uint32_t i = 0; i < size; i++){
-        free(net->fullConnData[i + 1]);
-    }
-    free(net->fullConnData);
-_ret:
-    net->modelsrc = 0;
-}
-*/
-
 void mlptrainer_totalgrads_cap_setup(uint32_t calclyrs ,netLyrConf *net, mlpTrainStatus *dest){
     dest->calclyrs = calclyrs;
     dest->modelsrc = net;
@@ -122,25 +87,6 @@ void mlptrainer_cleanup(mlpTrainStatus *net){
     free(net->lyrinput_grad);
 }
 
-/*
-void mlpexec_setup(uint32_t calclyrs ,netLyrConf *net, mlpExecStatus *dest){
-    dest->calclyrs = calclyrs;
-    dest->modelsrc = net;
-    uint16_t outdim_max = 0;
-    for(uint32_t i = 0; i < calclyrs; i++){
-        uint16_t outdim = net[i].out_dim;
-        if(outdim > outdim_max) outdim_max = outdim;
-    }
-    dest->fullConnData_tmp[0] = (qfix*)malloc(sizeof(qfix*) * outdim_max);
-    dest->fullConnData_tmp[1] = (qfix*)malloc(sizeof(qfix*) * outdim_max);
-}
-
-void mlpexec_cleanup(mlpExecStatus *net){
-    free(net->fullConnData_tmp[0]);
-    free(net->fullConnData_tmp[1]);
-    net->modelsrc = 0;
-}
-*/
 void mlpexec_setup(const uint32_t calclyrs ,const netLyrConf *net, mlpExecStatus *dest){
     dest->calclyrs = calclyrs;
     dest->modelsrc = net;

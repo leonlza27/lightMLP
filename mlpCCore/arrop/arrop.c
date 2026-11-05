@@ -95,98 +95,47 @@ DLLEXPORT void arr_mtpose(const qfix *in1, const uint16_t rows1, const uint16_t 
     arr_mtpose_mt(in1, rows1, cols1, out);
 }
 
-//<Promot for AI>注:把多线程函数写在这,支持win(winapi)/apple(pthread)/linux(pthread)
+//<Promot for AI>注:多线程函数借助 ../threadpool 的常驻线程池实现, 支持win(winapi)/apple/linux(pthread)
 
 /*
- * 多线程实现
- *
- * 平台:
- *   Windows        -> WinAPI CreateThread
- *   Apple / Linux  -> pthread
+ * 多线程实现(基于 ../threadpool 的常驻线程池)
  *
  * 说明:
- *   - 任务按连续区间切分, 每个线程只写自己负责的输出区间, 线程间无数据竞争, 无需加锁
- *   - 每次调用临时创建线程并在返回前全部join, 不保留全局线程状态, 可重入
- *   - 数据量不足以抵消线程创建开销时自动退化为单线程(与原函数完全等价)
+ *   - 线程池在进程内懒加载一次, 之后所有 arr_*_mt 调用复用同一批工作线程,
+ *     避免每次调用都重新创建/销毁线程
+ *   - 每批任务按连续区间切分, 每个任务只写自己负责的输出区间, 任务间无数据竞争, 无需额外加锁
+ *   - 数据量不足以抵消并发调度开销时自动退化为单线程(与单线程版函数完全等价)
+ *   - 由于共享同一线程池, 各 arr_*_mt 调用应串行使用(池内上一批任务完成后才可提交下一批)
  */
 
-#if defined(_WIN32)
-#include <windows.h>
-#else
-#include <pthread.h>
-#include <unistd.h>
-#endif
+#include "../threadpool/threadpool.h"
 
-#define ARR_MT_MAX_THREADS 32u            //线程数上限, 避免超多核平台上的调度开销
-#define ARR_MT_MIN_ELEMS_PER_THREAD 4096u //单个线程至少处理的元素数
+#define ARR_MT_MAX_THREADS 32u            //任务数上限, 避免超多核平台上的调度开销
+#define ARR_MT_MIN_ELEMS_PER_THREAD 4096u //单个任务至少处理的元素数
 
-#if defined(_WIN32)
-typedef HANDLE arr_mt_thread;
-#else
-typedef pthread_t arr_mt_thread;
-#endif
+//任务单元: 处理 [start, end) 区间, arg 指向各算子私有的参数结构体
+typedef void (*arr_mt_range_fn)(uint32_t start, uint32_t end, void *arg);
 
-//区间任务: 处理 [start, end)
-typedef void (*arr_mt_worker_fn)(uint32_t start, uint32_t end, void *arg);
-
-typedef struct arr_mt_job{
-    arr_mt_worker_fn fn;
+typedef struct arr_mt_task{
+    arr_mt_range_fn fn;
     void *arg;
     uint32_t start;
     uint32_t end;
-} arr_mt_job;
+} arr_mt_task;
 
-//获取可用逻辑核心数(获取失败时按1处理)
-static uint32_t arr_mt_cpu_count(void){
-    static uint32_t cached = 0; //并发写入相同值, 无需加锁
-    if(cached != 0) return cached;
-#if defined(_WIN32)
-    SYSTEM_INFO info;
-    GetSystemInfo(&info);
-    cached = (uint32_t)info.dwNumberOfProcessors;
-#else
-    long cores = sysconf(_SC_NPROCESSORS_ONLN);
-    cached = (cores > 0) ? (uint32_t)cores : 1u;
-#endif
-    if(cached == 0) cached = 1u;
-    return cached;
+//线程池回调: 从参数区取出一个任务并执行
+static void arr_mt_task_run(void *param){
+    const arr_mt_task *task = (const arr_mt_task *)param;
+    task->fn(task->start, task->end, task->arg);
 }
 
-#if defined(_WIN32)
-static DWORD WINAPI arr_mt_entry(LPVOID param){
-#else
-static void *arr_mt_entry(void *param){
-#endif
-    arr_mt_job *job = (arr_mt_job *)param;
-    job->fn(job->start, job->end, job->arg);
-#if defined(_WIN32)
-    return 0;
-#else
-    return NULL;
-#endif
-}
+//进程内共享的线程池(懒加载, 供所有 arr_*_mt 调用复用)
+static threadpool g_arr_mt_pool;
+static int g_arr_mt_pool_ready = 0;
 
-static int arr_mt_thread_create(arr_mt_thread *thread, arr_mt_job *job){
-#if defined(_WIN32)
-    *thread = CreateThread(NULL, 0, arr_mt_entry, job, 0, NULL);
-    return (*thread != NULL);
-#else
-    return (pthread_create(thread, NULL, arr_mt_entry, job) == 0);
-#endif
-}
-
-static void arr_mt_thread_join(arr_mt_thread thread){
-#if defined(_WIN32)
-    WaitForSingleObject(thread, INFINITE);
-    CloseHandle(thread);
-#else
-    pthread_join(thread, NULL);
-#endif
-}
-
-//根据总任务量与单线程最小任务量决定线程数
+//根据总任务量与单任务最小元素数决定任务数(线程池按任务动态分发到工作线程)
 static uint32_t arr_mt_worker_count(uint32_t total, uint32_t min_per_thread){
-    uint32_t cpus, by_work;
+    uint32_t by_work;
 
     if(total == 0) return 0;
     if(min_per_thread == 0) min_per_thread = 1;
@@ -194,20 +143,15 @@ static uint32_t arr_mt_worker_count(uint32_t total, uint32_t min_per_thread){
     by_work = total / min_per_thread;
     if(by_work == 0) by_work = 1;
     if(by_work > total) by_work = total;
-
-    cpus = arr_mt_cpu_count();
-    if(cpus > ARR_MT_MAX_THREADS) cpus = ARR_MT_MAX_THREADS;
-    if(cpus > by_work) cpus = by_work;
-    if(cpus == 0) cpus = 1;
-    return cpus;
+    if(by_work > ARR_MT_MAX_THREADS) by_work = ARR_MT_MAX_THREADS;
+    return by_work;
 }
 
-//通用并行for: 将 [0, total) 切分给多个线程, 主线程也参与计算
+//通用并行for: 将 [0, total) 切分为多个连续区间任务提交给线程池, 并等待本批任务完成
 static void arr_mt_parallel_for(uint32_t total, uint32_t min_per_thread,
-                                arr_mt_worker_fn fn, void *arg){
-    uint32_t nthreads, per, rem, start, first_end, created, i;
-    arr_mt_thread threads[ARR_MT_MAX_THREADS];
-    arr_mt_job jobs[ARR_MT_MAX_THREADS];
+                                arr_mt_range_fn fn, void *arg){
+    uint32_t nthreads, per, rem, start, i;
+    arr_mt_task tasks[ARR_MT_MAX_THREADS];
 
     if(total == 0) return;
 
@@ -219,37 +163,30 @@ static void arr_mt_parallel_for(uint32_t total, uint32_t min_per_thread,
 
     per = total / nthreads;
     rem = total % nthreads;
+    start = 0;
 
-    //主线程处理第一段, 其余段交给子线程
-    first_end = per + ((rem > 0) ? 1u : 0u);
-    start = first_end;
-    created = 0;
-
-    for(i = 1; i < nthreads; i++){
-        uint32_t count = per + ((i < rem) ? 1u : 0u);
-        uint32_t end = start + count;
-
-        if(start >= total) break;
+    for(i = 0; i < nthreads; i++){
+        uint32_t end = start + per + ((i < rem) ? 1u : 0u);
         if(end > total) end = total;
 
-        jobs[created].fn = fn;
-        jobs[created].arg = arg;
-        jobs[created].start = start;
-        jobs[created].end = end;
+        tasks[i].fn = fn;
+        tasks[i].arg = arg;
+        tasks[i].start = start;
+        tasks[i].end = end;
 
-        if(arr_mt_thread_create(&threads[created], &jobs[created])){
-            created++;
-        }else{
-            //线程创建失败时由当前线程直接完成该段, 保证结果正确
-            fn(start, end, arg);
-        }
         start = end;
     }
 
-    fn(0, first_end, arg);
+    if(!g_arr_mt_pool_ready){
+        //首次调用创建线程池, 同时提交第一批任务
+        init_pool(&g_arr_mt_pool, arr_mt_task_run, tasks, nthreads, sizeof(arr_mt_task));
+        g_arr_mt_pool_ready = 1;
+    }else{
+        pool_set_newtask(&g_arr_mt_pool, tasks, nthreads);
+    }
 
-    for(i = 0; i < created; i++){
-        arr_mt_thread_join(threads[i]);
+    //等待本批任务全部完成(pool_checkTaskProcessing 返回0表示已完成)
+    while(pool_checkTaskProcessing(&g_arr_mt_pool)){
     }
 }
 

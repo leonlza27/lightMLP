@@ -11,7 +11,8 @@ matrix_bp alloc_matrix_bp(uint16_t m, uint16_t n){
     return ret;
 }
 
-//旧API接到新API上防止崩溃
+//旧API接到新API上防止崩溃,目前python/java绑定依旧然使用该abi
+//这些将在python/java绑定迁移完成后移除
 
 void matrix_bp_add(const matrix_bp_data *madd1, const matrix_bp_data *madd2, matrix_bp_data *resu){
     resu->cols = madd1->cols;

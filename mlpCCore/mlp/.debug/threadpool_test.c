@@ -1,3 +1,5 @@
+//草稿,验证可行性
+
 #include <stdint.h>
 #include <windows.h>
 #include <stdio.h>
