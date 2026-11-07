@@ -27,7 +27,6 @@ execute_process(COMMAND ${python_EXE} ${Python_ARGS})
 file(COPY mlpCCore/matrix DESTINATION ${CMAKE_BINARY_DIR}/__out__/lmlp)
 file(COPY mlpCCore/mlp DESTINATION ${CMAKE_BINARY_DIR}/__out__/lmlp)
 file(COPY mlpCCore/qfix_ops DESTINATION ${CMAKE_BINARY_DIR}/__out__/lmlp)
-file(COPY mlpCCore/tools DESTINATION ${CMAKE_BINARY_DIR}/__out__/lmlp)
 
 #for pc/phone(native) include
 file(COPY mlpCCore/matrix/matrix_static.h DESTINATION ${CMAKE_BINARY_DIR}/__out__/include/matrix)
@@ -35,4 +34,3 @@ file(COPY mlpCCore/mlp/mlp.h DESTINATION ${CMAKE_BINARY_DIR}/__out__/include/mlp
 file(COPY mlpCCore/mlp/builtin_ac_callback.h DESTINATION ${CMAKE_BINARY_DIR}/__out__/include/mlp)
 file(COPY mlpCCore/mlp/filedump.h DESTINATION ${CMAKE_BINARY_DIR}/__out__/include/mlp)
 file(COPY mlpCCore/qfix_ops/qfix_op.h DESTINATION ${CMAKE_BINARY_DIR}/__out__/include/qfix_ops)
-file(COPY mlpCCore/tools/mult_proc.h DESTINATION ${CMAKE_BINARY_DIR}/__out__/include/tools)

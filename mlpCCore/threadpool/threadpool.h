@@ -32,13 +32,31 @@ struct threadpool{
     size_t param_size;
     char *params;
 
-    volatile uint8_t onrun;
+    volatile uint8_t onrun : 1;
 };
 
 typedef struct threadpool threadpool;
 
+#if defined(_WIN32)
+#define TP_WORKER_ENTRY   DWORD WINAPI
+#define TP_WORKER_RETVAL  0
+typedef LPTHREAD_START_ROUTINE tp_thread_fn;
+#else
+#define TP_WORKER_ENTRY   void*
+#define TP_WORKER_RETVAL  NULL
+typedef void *(*tp_thread_fn)(void*);
+#endif
+
+void tp_mutex_init(tp_mutex *mutex);
+void tp_mutex_lock(tp_mutex *mutex);
+void tp_mutex_unlock(tp_mutex *mutex);
+void tp_mutex_destroy(tp_mutex *mutex);
+void tp_sleep_ms(unsigned int ms);
+int tp_thread_create(tp_thread *thread, tp_thread_fn fn, void *arg);
+void tp_thread_join(tp_thread thread);
+
 void init_pool(threadpool *pool, void (*callback)(void*), void* constructed_params, size_t tasks_count, size_t param_size);
-void pool_set_newtask(threadpool *pool, void* constructed_params, size_t tasks_count); //需等上一批任务全部完成后再调用
+void pool_set_newtask(threadpool *pool, void (*new_callback)(void*), void* constructed_params, size_t tasks_count); //需等上一批任务全部完成后再调用
 uint8_t pool_checkTaskProcessing(threadpool *pool); //返回0表示当前批次任务已全部执行完毕
 void pool_clear(threadpool *pool);
 #endif

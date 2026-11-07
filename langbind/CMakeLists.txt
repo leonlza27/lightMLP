@@ -2,5 +2,7 @@
 #if you need to use for the embdded or have moditifed one, just use the source code
 #and use the cmake script carefully
 
-add_subdirectory(python)
-add_subdirectory(java)
+
+#语言绑定待重构
+#add_subdirectory(python)
+#add_subdirectory(java)

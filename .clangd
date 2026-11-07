@@ -2,5 +2,5 @@ CompileFlags:
     Add:
         - "-ID:\\LibericaJDK-17\\include"
         - "-ID:\\LibericaJDK-17\\include\\win32"
-        - "-ID:\\python_pkg\\Python\\Python312\\include"
+        - "-ID:\\GCC-GNU\\mingw64\\opt\\include\\python3.14\\Python.h"
         - "-ID:\\ccpp_proj\\lightMLP"

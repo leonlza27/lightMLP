@@ -60,8 +60,8 @@ int main(){
 
     mlpTrainStatus ntrain, ngradsave;
 #ifndef manual
-    mlptrainer_setup(2, net, &ntrain);
-    mlptrainer_totalgrads_cap_setup(2, net, &ngradsave);
+    mlptrain_setup(2, net, &ntrain);
+    mlptrain_totalgrads_cap_setup(2, net, &ngradsave);
 #else
     ntrain.calclyrs = 2;
     ntrain.modelsrc = net;
@@ -91,7 +91,7 @@ int main(){
 
     for(int i = 0; i < 500; i++){
         printf("simutlate train epoch %d: fullconndata: %p\nforwarding\n", i, ntrain.fullConnData);
-        mlptrainer_execute(&ntrain, w0);
+        mlptrain_execute(&ntrain, w0);
         mr->data[0] = ntrain.fullConnData[2][0];
         //qfix simresu = 3;
         mexc->data[0] = 3;
@@ -99,13 +99,13 @@ int main(){
         matrix_bp_sub(mexc, mr, mgrad);
 
         printf("backwarding\n");
-        mlptrainer_backward(&ntrain, mgrad->data, 0);
+        mlptrain_backward(&ntrain, mgrad->data, 0);
 
         printf("saving grads\n");
-        mlptrainer_totalgrads_savegrads(&ntrain, &ngradsave);
+        mlptrain_totalgrads_savegrads(&ntrain, &ngradsave);
     }
-    mlptrainer_cleanup(&ntrain);
-    mlptrainer_cleanup(&ngradsave);
+    mlptrain_cleanup(&ntrain);
+    mlptrain_cleanup(&ngradsave);
     mlpExecStatus nexec;
     mlpexec_setup(2, net, &nexec);
     for(int i = 0; i < 500; i++){

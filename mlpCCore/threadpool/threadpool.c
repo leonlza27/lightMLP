@@ -27,7 +27,7 @@
 //线程句柄/互斥量类型与 threadpool 结构体定义已移至 threadpool.h,
 //以便调用方能在栈或静态区直接分配线程池对象
 
-static void tp_mutex_init(tp_mutex *mutex){
+void tp_mutex_init(tp_mutex *mutex){
 #if defined(_WIN32)
     *mutex = CreateMutexA(NULL, FALSE, NULL);
 #else
@@ -35,7 +35,7 @@ static void tp_mutex_init(tp_mutex *mutex){
 #endif
 }
 
-static void tp_mutex_lock(tp_mutex *mutex){
+void tp_mutex_lock(tp_mutex *mutex){
 #if defined(_WIN32)
     WaitForSingleObject(*mutex, INFINITE);
 #else
@@ -43,7 +43,7 @@ static void tp_mutex_lock(tp_mutex *mutex){
 #endif
 }
 
-static void tp_mutex_unlock(tp_mutex *mutex){
+void tp_mutex_unlock(tp_mutex *mutex){
 #if defined(_WIN32)
     ReleaseMutex(*mutex);
 #else
@@ -51,7 +51,7 @@ static void tp_mutex_unlock(tp_mutex *mutex){
 #endif
 }
 
-static void tp_mutex_destroy(tp_mutex *mutex){
+void tp_mutex_destroy(tp_mutex *mutex){
 #if defined(_WIN32)
     CloseHandle(*mutex);
 #else
@@ -60,7 +60,7 @@ static void tp_mutex_destroy(tp_mutex *mutex){
 }
 
 //休眠指定毫秒数(线程池空闲轮询用)
-static void tp_sleep_ms(unsigned int ms){
+void tp_sleep_ms(unsigned int ms){
 #if defined(_WIN32)
     Sleep(ms);
 #else
@@ -94,7 +94,6 @@ static void *subthread_capactor(void *init_params)
 #endif
 {
     threadpool *pool = (threadpool*)init_params;
-    void (*callback)(void*) = pool->callback;
     while(pool->onrun){
         tp_mutex_lock(&pool->param_lock);
         if(pool->curidx < pool->param_capacity){
@@ -103,7 +102,7 @@ static void *subthread_capactor(void *init_params)
             char *params = pool->params;
             size_t param_size = pool->param_size;
             tp_mutex_unlock(&pool->param_lock);
-            callback(&params[idxcur * param_size]);
+            pool->callback(&params[idxcur * param_size]);
             tp_mutex_lock(&pool->param_lock);
             pool->finished_cnt++;
             tp_mutex_unlock(&pool->param_lock);
@@ -120,17 +119,17 @@ static void *subthread_capactor(void *init_params)
 }
 
 //创建单个工作线程(成功返回非0)
-static int tp_thread_create(tp_thread *thread, threadpool *pool){
+int tp_thread_create(tp_thread *thread, tp_thread_fn fn, void *arg){
 #if defined(_WIN32)
-    *thread = CreateThread(NULL, 0, subthread_capactor, pool, 0, NULL);
+    *thread = CreateThread(NULL, 0, fn, arg, 0, NULL);
     return (*thread != NULL);
 #else
-    return (pthread_create(thread, NULL, subthread_capactor, pool) == 0);
+    return (pthread_create(thread, NULL, fn, arg) == 0);
 #endif
 }
 
 //等待并回收单个工作线程
-static void tp_thread_join(tp_thread thread){
+void tp_thread_join(tp_thread thread){
 #if defined(_WIN32)
     WaitForSingleObject(thread, INFINITE);
     CloseHandle(thread);
@@ -176,7 +175,7 @@ void init_pool(threadpool *pool, void (*callback)(void*), void* constructed_para
     }
 
     for(i = 0; i < pool->available_subtask_cnt; i++){
-        if(tp_thread_create(&pool->subthreads[i], pool)) created++;
+        if(tp_thread_create(&pool->subthreads[i], subthread_capactor ,pool)) created++;
         else break;
     }
     pool->available_subtask_cnt = created; //仅记录实际创建成功的线程数, 避免回收无效线程句柄
@@ -185,13 +184,14 @@ void init_pool(threadpool *pool, void (*callback)(void*), void* constructed_para
     if(created == 0) tp_run_sync(pool, constructed_params, tasks_count, param_size);
 }
 
-void pool_set_newtask(threadpool *pool, void* constructed_params, size_t tasks_count){
+void pool_set_newtask(threadpool *pool, void (*new_callback)(void*), void* constructed_params, size_t tasks_count){
     size_t workers, param_size;
     tp_mutex_lock(&pool->param_lock);
     pool->curidx = 0;
     pool->finished_cnt = 0;
     pool->params = (char*)constructed_params;
     pool->param_capacity = tasks_count;
+    pool->callback = new_callback;
     workers = pool->available_subtask_cnt;
     param_size = pool->param_size;
     tp_mutex_unlock(&pool->param_lock);
