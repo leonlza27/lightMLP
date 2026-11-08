@@ -51,7 +51,7 @@ void mlptrain_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
         dest->w_grad[i] = (qfix*)fullmem;
         fullmem += sizeof(qfix) * indim * outdim;
         dest->b_grad[i] = (qfix*)fullmem;
-        fullmem += sizeof(qfix*) * indim;
+        fullmem += sizeof(qfix) * indim;
     }
 }
 
@@ -183,10 +183,10 @@ void DLLEXPORT mlptrain_update_from_collector(const mlpTrainStatus *model, const
     uint32_t netlen = model->calclyrs;
     netLyrConf *modelsrc = model->modelsrc;
     for(uint32_t l = 0; l < netlen; l++){
-        uint16_t indi =  model->modelsrc[l].in_dim;
-        uint32_t size = indi * model->modelsrc[l].out_dim;
-        for(uint16_t i = 0; i < indi; i++) modelsrc[l].bias += gradscap->b_grad[l][i];
-        for(uint32_t i = 0; i < size; i++) modelsrc[l].weights += gradscap->w_grad[l][i];
+        uint16_t outdi =  model->modelsrc[l].out_dim;
+        uint32_t size = outdi * model->modelsrc[l].in_dim;
+        for(uint16_t i = 0; i < outdi; i++) modelsrc[l].bias[i] += gradscap->b_grad[l][i];
+        for(uint32_t i = 0; i < size; i++) modelsrc[l].weights[i] += gradscap->w_grad[l][i];
     }
 }
 
@@ -194,9 +194,9 @@ void DLLEXPORT mlptrain_collector_collect(const mlpTrainStatus* net_or_gradcap, 
     uint32_t netlen = gradscap_dest->calclyrs;
 
     for(uint32_t l = 0; l < netlen; l++){
-        uint16_t indi =  gradscap_dest->modelsrc[l].in_dim;
-        uint32_t size = indi * gradscap_dest->modelsrc[l].out_dim;
-        for(uint16_t i = 0; i < indi; i++) gradscap_dest->b_grad[l][i] += qfix_mul(lr_cur, net_or_gradcap->b_grad[l][i]);
+        uint16_t outdi =  gradscap_dest->modelsrc[l].out_dim;
+        uint32_t size = outdi * gradscap_dest->modelsrc[l].in_dim;
+        for(uint16_t i = 0; i < outdi; i++) gradscap_dest->b_grad[l][i] += qfix_mul(lr_cur, net_or_gradcap->b_grad[l][i]);
         for(uint32_t i = 0; i < size; i++) gradscap_dest->w_grad[l][i] += qfix_mul(lr_cur, net_or_gradcap->w_grad[l][i]);
     }
 }
