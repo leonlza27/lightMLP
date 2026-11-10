@@ -1,3 +1,4 @@
+#include <stddef.h>   /* size_t(Linux/glibc 的 stdint.h 不提供 size_t) */
 #include <stdint.h>
 
 struct threadpool;

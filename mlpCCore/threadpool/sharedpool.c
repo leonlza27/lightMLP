@@ -166,8 +166,12 @@ int32_t pubpools_append_task(void (*callback)(void*), void *params, size_t count
 }
 
 threadpool *pubpools_getpool(uint16_t idx){
-    if(idx > pools_cnt) return 0;
-    return pub_threadpools[idx].pool;
+    threadpool *pool = 0;
+    /* 与 checkprocessing/release 一致: 持锁读取资源表, 避免与后台回收线程的写入竞争 */
+    tp_mutex_lock(&poollst_onoperate_lock);
+    if(idx < pools_cnt) pool = pub_threadpools[idx].pool;   /* 原为 idx > pools_cnt: 末尾会越界读一格 */
+    tp_mutex_unlock(&poollst_onoperate_lock);
+    return pool;
 }
 
 uint8_t pubpools_checkprocessing(uint16_t idx){
