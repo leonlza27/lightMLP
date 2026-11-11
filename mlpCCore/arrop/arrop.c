@@ -2,18 +2,6 @@
 #include "../qfix_ops/qfix_op.h"
 #include "../CustomConf.h"
 
-//多线程版本前向声明
-#ifdef MULTI_PROCESS
-DLLEXPORT void arr_add_mt(const qfix *in1, const  qfix* in2, uint32_t len, qfix* out);
-DLLEXPORT void arr_sub_mt(const qfix *in1, const qfix* in2, const uint32_t len, qfix* out);
-DLLEXPORT void arr_scale_mt(const qfix *in1, const qfix scale, const uint32_t len, qfix* out);
-DLLEXPORT void arr_emul_mt(const qfix *in1, const qfix* in2, const uint32_t len, qfix* out);
-DLLEXPORT void arr_mmul_mt(const qfix *in1, const qfix* in2, const uint16_t rows1, const uint16_t c1_r2, const uint16_t cols2, qfix* out);
-DLLEXPORT void arr_mtpose_mt(const qfix *in1, const uint16_t rows1, const uint16_t cols1, qfix* out);
-#endif
-
-#ifndef MULTI_PROCESS
-
 DLLEXPORT void arr_add(const qfix *in1, const qfix* in2, const uint32_t len, qfix* out){
     for(uint32_t i = 0; i < len; i++){
         out[i] = in1[i] + in2[i];
@@ -69,32 +57,7 @@ DLLEXPORT void arr_mtpose(const qfix *in1, const uint16_t rows1, const uint16_t 
     }
 }
 
-#else
-
-DLLEXPORT void arr_add(const qfix *in1, const qfix* in2, const uint32_t len, qfix* out){
-    arr_add_mt(in1, in2, len, out);
-}
-
-DLLEXPORT void arr_sub(const qfix *in1, const qfix* in2, const uint32_t len, qfix* out){
-    arr_sub_mt(in1, in2, len, out);
-}
-
-DLLEXPORT void arr_scale(const qfix *in1, const qfix scale, const uint32_t len, qfix* out){
-    arr_scale_mt(in1, scale, len, out);
-}
-
-DLLEXPORT void arr_emul(const qfix *in1, const qfix* in2, const uint32_t len, qfix* out){
-    arr_emul_mt(in1, in2, len, out);
-}
-
-DLLEXPORT void arr_mmul(const qfix *in1, const qfix* in2, const uint16_t rows1, const uint16_t c1_r2, const uint16_t cols2, qfix* out){
-    arr_mmul_mt(in1, in2, rows1, c1_r2, cols2, out);
-}
-
-DLLEXPORT void arr_mtpose(const qfix *in1, const uint16_t rows1, const uint16_t cols1, qfix* out){
-    arr_mtpose_mt(in1, rows1, cols1, out);
-}
-
+#ifdef MULTI_PROCESS
 //<Promot for AI>注:多线程函数借助 ../threadpool 的 sharedpool 共享线程池实现, 支持win(winapi)/apple/linux(pthread)
 
 /*
