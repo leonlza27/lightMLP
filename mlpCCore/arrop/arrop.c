@@ -324,5 +324,28 @@ DLLEXPORT void arr_mtpose_mt(const qfix *in1, const uint16_t rows1, const uint16
 
     arr_mt_parallel_for(rows1, min_rows, arr_mtpose_range, &arg);
 }
+#else
+DLLEXPORT void arr_add_mt(const qfix *in1, const qfix* in2, uint32_t len, qfix* out){
+    arr_add(in1, in2, len, out);
+}
 
+DLLEXPORT void arr_sub_mt(const qfix *in1, const qfix* in2, const uint32_t len, qfix* out){
+    arr_sub(in1, in2, len, out);
+}
+
+DLLEXPORT void arr_scale_mt(const qfix *in1, const qfix scale, const uint32_t len, qfix* out){
+    arr_scale(in1, scale, len, out);
+}
+
+DLLEXPORT void arr_emul_mt(const qfix *in1, const qfix* in2, const uint32_t len, qfix* out){
+    arr_emul(in1, in2, len, out);
+}
+
+DLLEXPORT void arr_mmul_mt(const qfix *in1, const qfix* in2, const uint16_t rows1, const uint16_t c1_r2, const uint16_t cols2, qfix* out){
+    arr_mmul(in1, in2, rows1, c1_r2, cols2, out);
+}
+
+DLLEXPORT void arr_mtpose_mt(const qfix *in1, const uint16_t rows1, const uint16_t cols1, qfix* out){
+    arr_mtpose(in1, rows1, cols1, out);
+}
 #endif

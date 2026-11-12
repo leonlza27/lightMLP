@@ -4,5 +4,5 @@
 
 
 #语言绑定待重构
-#add_subdirectory(python)
+add_subdirectory(python/bind_src)
 #add_subdirectory(java)

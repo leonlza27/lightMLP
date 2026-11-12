@@ -36,8 +36,6 @@ void DLLEXPORT mlptrain_collector_setup(const uint32_t calclyrs ,netLyrConf *net
 void DLLEXPORT mlptrain_cleanup(mlpTrainStatus *net);
 void DLLEXPORT mlptrain_execute(const mlpTrainStatus *model, const qfix *arrin);
 
-//支持数据并行
-
 void DLLEXPORT mlptrain_collector_collect(const mlpTrainStatus* net_or_gradcap,
                                                const mlpTrainStatus* gradscap_dest, const qfix lr_cur);
 
@@ -53,5 +51,19 @@ void DLLEXPORT mlpexec_setup(const uint32_t calclyrs ,const netLyrConf *net, mlp
 void DLLEXPORT mlpexec_cleanup(mlpExecStatus *net);
 
 void DLLEXPORT mlpexec_execute(const mlpExecStatus *model, const qfix *arrin);
+
+//多线程计算拓展
+void DLLEXPORT mlptrain_execute_mt(const mlpTrainStatus *model, const qfix *arrin);
+
+void DLLEXPORT mlptrain_collector_collect_mt(const mlpTrainStatus* net_or_gradcap,
+                                               const mlpTrainStatus* gradscap_dest, const qfix lr_cur);
+
+void DLLEXPORT mlptrain_backward_mt(const mlpTrainStatus *model, const qfix *grad_inital, const qfix lr);
+void DLLEXPORT mlptrain_update_from_collector_mt(const mlpTrainStatus *model, const mlpTrainStatus *gradscap);
+void DLLEXPORT mlpexec_execute_mt(const mlpExecStatus *model, const qfix *arrin);
+
+#define mlptrain_resu_ptr(_pmlp) (_pmlp)->fullConnData[(_pmlp)->calclyrs]
+#define mlptrain_checkcap(_pmlp) (_pmlp)->fullConnData
+#define mlpexec_resu_ptr(_pmlp) (_pmlp)->fullConnData_tmp[((_pmlp)->calclyrs + 1) % 2]
 
 #endif

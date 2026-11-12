@@ -3,4 +3,4 @@ CompileFlags:
         - "-ID:\\LibericaJDK-17\\include"
         - "-ID:\\LibericaJDK-17\\include\\win32"
         - "-ID:\\Python\\Python315\\include"
-        - "-ID:\\ccpp_proj\\lightMLP"
+        - "-ID:\\ccpp_proj\\SOFTWARE\\lightMLP"
