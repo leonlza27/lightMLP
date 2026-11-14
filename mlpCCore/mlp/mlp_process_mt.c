@@ -418,7 +418,7 @@ static void mlpmt_bwd_gradrows(void *arg, uint32_t start, uint32_t end){
 static void mlpmt_bwd_inrows(void *arg, uint32_t start, uint32_t end){
     const mlpmt_bwd_ctx *c = (const mlpmt_bwd_ctx *)arg;
     for(uint32_t j = start; j < end; j++){
-        qfix acc = c->grads_dst[j];
+        qfix acc = 0;   /* 该缓冲在 setup 阶段未初始化, 不能作为累加基值(与单线程版一致) */
         for(uint16_t i = 0; i < c->outdi; i++)
             acc += qfix_mul(c->gc[i], c->w[(size_t)i * c->indi + j]);
         c->grads_dst[j] = acc;

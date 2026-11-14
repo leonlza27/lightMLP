@@ -19,4 +19,7 @@ typedef struct mlpexec_pyhandle{
 
 extern PyTypeObject mlptrain_pyhandle_def;
 extern PyTypeObject mlpexec_pyhandle_def;
+
+extern PyModuleDef mlp_norm_topy;
+extern PyModuleDef mlp_mt_topy;
 #endif

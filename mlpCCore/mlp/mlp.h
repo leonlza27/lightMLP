@@ -64,6 +64,6 @@ void DLLEXPORT mlpexec_execute_mt(const mlpExecStatus *model, const qfix *arrin)
 
 #define mlptrain_resu_ptr(_pmlp) (_pmlp)->fullConnData[(_pmlp)->calclyrs]
 #define mlptrain_checkcap(_pmlp) (_pmlp)->fullConnData
-#define mlpexec_resu_ptr(_pmlp) (_pmlp)->fullConnData_tmp[((_pmlp)->calclyrs + 1) % 2]
+#define mlpexec_resu_ptr(_pmlp) (_pmlp)->fullConnData_tmp[(_pmlp)->calclyrs % 2]
 
 #endif

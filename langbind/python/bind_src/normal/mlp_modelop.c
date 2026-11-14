@@ -68,12 +68,16 @@ PyObject *constructnet_to_pyhandle(PyObject *_rtime, PyObject *args){
         cur = PyList_GetItem(input_lst, i);
         if(!cur) goto _ret_err;
         if(!Py_IS_TYPE(cur, &PyTuple_Type)) goto _ret_err;
-        uint32_t indim, outdim;
+        //注意: "H" 只写 2 字节, 这里必须是 uint16_t(与注释里的接口约定一致),
+        //用 uint32_t 会让高 2 字节保留未初始化值, 使下面的层间维度校验误判
+        uint16_t indim, outdim;
         uint8_t actp;
         double dexa_orig;
         if(!PyArg_ParseTuple(cur, "HHbd", &indim, &outdim, &actp, &dexa_orig)) goto _ret_err;
         if(i && indim != outdi_last) goto _ret_err;
-        qfix *wnew = (qfix*)malloc(sizeof(qfix*) * outdim);
+        //权重含 in_dim*out_dim 个元素: 原写法 sizeof(qfix*)*out_dim 在 in_dim>2 时under-allocate,
+        //in_dim<2 时又超分配, 都会破坏堆
+        qfix *wnew = (qfix*)malloc(sizeof(qfix) * indim * outdim);
         if (!wnew) goto _ret_err;
         curly->weights = wnew;
         qfix *bnew = (qfix*)malloc(sizeof(qfix) * outdim);
@@ -89,6 +93,8 @@ PyObject *constructnet_to_pyhandle(PyObject *_rtime, PyObject *args){
     return (PyObject*)ret;
 
     _ret_err:
+    //上面的解析/分配失败可能没设置异常, 此时直接返回0会让CPython报 SystemError
+    if(!PyErr_Occurred()) PyErr_SetString(PyExc_ValueError, "modeldef: bad layer config or out of memory");
     Py_DECREF(ret);
     return 0;
 };
@@ -179,7 +185,7 @@ PyMethodDef model_operations[] = {
 
 PyModuleDef model_ops = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "core.mlp.modelops",
+    .m_name = "core.mlp.ioops",
     .m_methods = model_operations,
     .m_size = -1,
     .m_doc = 0,

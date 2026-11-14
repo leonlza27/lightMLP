@@ -12,11 +12,11 @@ void mlptrain_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
         const uint16_t indim = net[i].in_dim;
         const uint16_t outdim = net[i].out_dim;
         /*
-        outdim: fullConnData<offset+1> + va_wxb
-        indim:  b_grad + lyrinput_grad
+        outdim: fullConnData<offset+1> + va_wxb + b_grad
+        indim:  lyrinput_grad
         in * out: w_grad
         */
-        all_size += (outdim * 2 + indim * 2 + outdim * indim) * sizeof(qfix);
+        all_size += (outdim * 3 + indim + outdim * indim) * sizeof(qfix);
     }
 
     char *fullmem = malloc(all_size);
@@ -51,7 +51,7 @@ void mlptrain_setup(uint32_t calclyrs, netLyrConf *net, mlpTrainStatus *dest){
         dest->w_grad[i] = (qfix*)fullmem;
         fullmem += sizeof(qfix) * indim * outdim;
         dest->b_grad[i] = (qfix*)fullmem;
-        fullmem += sizeof(qfix) * indim;
+        fullmem += sizeof(qfix) * outdim;
     }
 }
 
@@ -65,11 +65,10 @@ void DLLEXPORT mlptrain_collector_setup(const uint32_t calclyrs ,netLyrConf *net
         const uint16_t indim = net[i].in_dim;
         const uint16_t outdim = net[i].out_dim;
         /*
-        outdim: fullConnData<offset+1> + va_wxb
-        indim:  b_grad + lyrinput_grad
+        outdim: b_grad
         in * out: w_grad
         */
-        all_size += (indim  + outdim * indim) * sizeof(qfix);
+        all_size += (outdim + outdim * indim) * sizeof(qfix);
     }
 
     char *fullmem = malloc(all_size);
@@ -89,7 +88,10 @@ void DLLEXPORT mlptrain_collector_setup(const uint32_t calclyrs ,netLyrConf *net
         dest->w_grad[i] = (qfix*)fullmem;
         fullmem += sizeof(qfix) * indim * outdim;
         dest->b_grad[i] = (qfix*)fullmem;
-        fullmem += sizeof(qfix*) * indim;
+        fullmem += sizeof(qfix) * outdim;
+        //采集器是梯度累加器: 两个缓冲全靠 += 使用, 必须从 0 开始(否则结果取决于堆里的残留值)
+        for(uint32_t k = 0; k < (uint32_t)indim * outdim; k++) dest->w_grad[i][k] = 0;
+        for(uint16_t k = 0; k < outdim; k++) dest->b_grad[i][k] = 0;
     }   
 }
 
@@ -111,7 +113,7 @@ void mlpexec_setup(const uint32_t calclyrs ,const netLyrConf *net, mlpExecStatus
         const uint16_t outdim = net[i].out_dim;
         if(outdim > outdim_max) outdim_max = outdim;
     }
-    dest->fullConnData_tmp[0] = (qfix*)malloc(sizeof(qfix*) * outdim_max * 2);
+    dest->fullConnData_tmp[0] = (qfix*)malloc(sizeof(qfix) * outdim_max * 2);
     dest->fullConnData_tmp[1] = dest->fullConnData_tmp[0] + outdim_max;
 }
 
@@ -158,6 +160,8 @@ void mlptrain_backward(const mlpTrainStatus *model, const qfix *grad_inital, con
         const qfix *x_last = model->fullConnData[curidx];
         const qfix *x_ac = model->va_wxb[curidx];
         const qfix *wcur = w_this;
+        //输入梯度由各输出单元累加而成, 必须先清零(该缓冲在 setup 阶段并未初始化)
+        for(uint16_t j = 0; j < indi; j++) grads_dst[j] = 0;
         for(uint16_t i = 0; i < outdi; i++){
             const qfix grad_cur = qfix_mul(*gi_ref ,gradfn(*x_ac, dext));
             for(uint16_t j = 0; j < indi; j++){
