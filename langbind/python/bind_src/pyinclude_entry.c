@@ -1,6 +1,8 @@
 #include "normal/arrop_topy.h"      //arr_norm_topy / arr_mt_topy / arr_handle_def
 #include "normal/mlp_modelop.h"     //model_ops / modeldef_handle_def
 #include "normal/mlp_calc_topy.h"   //mlptrain_/mlpexec_ 类型对象与 mlp_norm_topy / mlp_mt_topy
+#include "normal/convop_topy.h"    //convops_topy 卷积/池化算子
+#include "mt_tpool_recofig.h"       //pool_reconfig 线程池重配置表(仅 -DMULTI_PROCESS)
 
 /*
 模块层次: 与各绑定源文件内 .m_name / tp_name 的约定一一对应
@@ -9,6 +11,7 @@
   |   |-- arr               core.arrop.arr        PyTypeObject arr_handle_def
   |   |-- norm              core.arrop.norm       arr_norm_topy   单线程算子
   |   `-- mt                core.arrop.mt         arr_mt_topy     仅 -DMULTI_PROCESS
+  |-- convops               core.convops          convops_topy    卷积/池化算子
   `-- mlp                   core.mlp              容器模块
       |-- modeldef          core.mlp.netdef       PyTypeObject modeldef_handle_def
       |-- mlptrain          core.mlp.mlptrain     PyTypeObject mlptrain_pyhandle_def
@@ -26,21 +29,24 @@
 static PyModuleDef core_moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "core",
-    .m_doc = "lightMLP core: core.arrop(定点数组与算子) / core.mlp(网络定义/训练/推理)",
+    .m_doc = 0,
     .m_size = -1,
+    #ifdef MULTI_PROCESS
+    .m_methods = pool_reconfig,
+    #endif
 };
 
 static PyModuleDef arrop_moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "core.arrop",
-    .m_doc = "core.arrop: 定点数组 core.arrop.arr 与线性代数算子(core.arrop.norm / core.arrop.mt)",
+    .m_doc = 0,
     .m_size = -1,
 };
 
 static PyModuleDef mlp_moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "core.mlp",
-    .m_doc = "core.mlp: 网络定义 modeldef, 训练 mlptrain, 推理 mlpexec 与模型读写 ioops",
+    .m_doc = 0,
     .m_size = -1,
 };
 
@@ -52,6 +58,7 @@ static const char *const submod_names[] = {
     "core.mlp",
     "core.arrop.mt",
     "core.arrop.norm",
+    "core.convops",
     "core.arrop",
 };
 #define SUBMOD_CNT (sizeof(submod_names) / sizeof(submod_names[0]))
@@ -122,7 +129,7 @@ static void submod_rollback(void){
 
 PyMODINIT_FUNC PyInit_core(){
     PyObject *ob_core = 0;
-    PyObject *ob_arrop = 0, *ob_mlp = 0;
+    PyObject *ob_arrop = 0, *ob_mlp = 0, *ob_convop = 0;
 
     ob_core = PyModule_Create(&core_moduledef);
     if(!ob_core) return 0;
@@ -130,6 +137,9 @@ PyMODINIT_FUNC PyInit_core(){
     //---- core.arrop: arr(类型) / norm / mt ----
     ob_arrop = submod_attach(ob_core, "core.arrop", "arrop", &arrop_moduledef);
     if(!ob_arrop) goto _init_fail;
+
+    ob_convop = submod_attach(ob_core, "core.convops", "convops", &convops_topy);
+    if(!ob_convop) goto _init_fail;
 
     if(!submod_attach(ob_arrop, "core.arrop.norm", "norm", &arr_norm_topy)) goto _init_fail;
     #ifdef MULTI_PROCESS

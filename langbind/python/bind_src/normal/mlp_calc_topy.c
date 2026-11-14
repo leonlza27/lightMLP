@@ -30,6 +30,8 @@ PyObject *mlptrain_py_init(PyTypeObject *tp, PyObject *args, PyObject *args_kw){
     }else{
         mlptrain_setup(modeldef_src->lyrscnt, modeldef_src->modeldef, trainnew->model);
     }
+    Py_INCREF(modeldef_src);
+    trainnew->modeldef = (PyObject*)modeldef_src;
     return (PyObject*)trainnew;
 }
 
@@ -40,6 +42,7 @@ void mlptrain_py_free(PyObject *_this){
         free(this->model);
         this->model = 0;
     }
+    Py_DECREF(this->modeldef);
     Py_TYPE(_this)->tp_free(_this);
 }
 
@@ -120,6 +123,8 @@ PyObject *mlpexec_py_init(PyTypeObject *tp, PyObject *args, PyObject *args_kw){
         return 0;
     }
     mlpexec_setup(modeldef_src->lyrscnt, modeldef_src->modeldef, execnew->model);
+    Py_INCREF(modeldef_src);
+    execnew->modeldef = (PyObject*)modeldef_src;
     return (PyObject*)execnew;
 }
 
@@ -130,6 +135,7 @@ void mlpexec_py_free(PyObject *_this){
         free(this->model);
         this->model = 0;
     }
+    Py_DECREF(this->modeldef);
     Py_TYPE(_this)->tp_free(_this);
 }
 

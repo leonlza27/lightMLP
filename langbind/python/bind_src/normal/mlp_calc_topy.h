@@ -9,11 +9,13 @@ extern PyTypeObject modeldef_handle_def;
 
 typedef struct mlptrain_pyhandle{
     PyObject_HEAD;
+    PyObject *modeldef;
     mlpTrainStatus *model;
 }mlptrain_pyhandle;
 
 typedef struct mlpexec_pyhandle{
     PyObject_HEAD;
+    PyObject *modeldef;
     mlpExecStatus *model;
 }mlpexec_pyhandle;
 
